@@ -11,18 +11,18 @@
 <details>
 <summary>Click to expand Table of Contents</summary>
 
-- [🧭 Overview](#🧭-overview)
-- [📦 Repository Contents](#📦-repository-contents)
-  - [🛠️ Current Drivers](#🛠️-current-drivers)
+- [🧭 Overview](#-overview)
+- [📦 Repository Contents](#-repository-contents)
+  - [🛠️ Current Drivers](#-current-drivers)
     - [Google Pollen Forecaster](#google-pollen-forecaster)
-  - [🔮 Future Projects](#🔮-future-projects)
-- [🤝 Contribution & Support](#🤝-contribution--support)
-  - [🐞 Reporting Bugs](#🐞-reporting-bugs)
-  - [✨ Contributing](#✨-contributing)
-- [📜 License & Versioning](#📜-license--versioning)
-- [📘 References / External Links](#📘-references--external-links)
-- [🛡️ Disclaimers](#🛡️-disclaimers)
-- [📝 Revision History](#📝-revision-history)
+  - [🔮 Future Projects](#-future-projects)
+- [🤝 Contribution & Support](#-contribution--support)
+  - [🐞 Reporting Bugs](#-reporting-bugs)
+  - [✨ Contributing](#-contributing)
+- [📜 License & Versioning](#-license--versioning)
+- [📘 References / External Links](#-references--external-links)
+- [🛡️ Disclaimers](#-disclaimers)
+- [📝 Revision History](#-revision-history)
 
 </details>
 
