@@ -1,7 +1,8 @@
 # 🌿 Google Pollen Forecaster
 _driver for Hubitat_  
 
-## 🛠️ **_COMING SOON_ – in pre-beta testing** 🛠️
+## 🚧 **_COMING SOON_ – in pre-beta testing** 🚧
+
 
 ## 🔢 Version
 **Documentation Version:** 1.1.  
@@ -15,23 +16,23 @@ _driver for Hubitat_
 <summary>Click to expand Table of Contents</summary>
     
 - 🧠 [Overview](#-overview)  
-- 🌱 [Background & Motivation](#-background--motivation)  
+- 📜 [Background & Motivation](#-background--motivation)  
 - 🚀 [Quick Start](#-quick-start)  
-  - 📦 [Hubitat Package Manager (HPM) Install](#-hubitat-package-manager-hpm-install)  
-  - 🧩 [Manual Install](#-manual-install)  
+  - 🧰 [Hubitat Package Manager (HPM) Install](#-hubitat-package-manager-hpm-install)  
+  - 🛠️ [Manual Install](#-manual-install)  
   - ⚙️ [Driver Configuration](#-driver-configuration)  
 - 🔑 [Getting Your Google API Key](#-getting-your-google-api-key)  
 - 💡 [Example Use Cases](#-example-use-cases)  
 - 🌿 [Supported Pollen Types](#-supported-pollen-types)  
 - 🔍 [Troubleshooting](#-troubleshooting)  
 - 📚 [Documentation Library](#-documentation-library)  
-- 📦 [Repository Structure](#-repository-structure)  
+- 🗂️ [Repository Structure](#-repository-structure)  
 - 🐞 [Reporting Bugs](#-reporting-bugs)  
 - 🤝 [Contributing](#-contributing)  
-- [📜 License & Versioning](#-license--versioning)
+- [⚖️ License & Versioning](#-license--versioning)
 - [🔗 References / External Links](#-references--external-links)
 - 🛡️ [Disclaimers](#-disclaimers)  
-- 📈 [Revision History](#-revision-history)  
+- 📝 [Revision History](#-revision-history)  
 
 </details>
 
@@ -49,7 +50,7 @@ The Google Pollen Forecaster Driver is a custom Hubitat Elevation driver that fe
 
 ---
 
-## 🌱 Background & Motivation
+## 📜 Background & Motivation
 
 This driver started as an AI-assisted learning experiment by a Software Implementation Project Manager (with very limited coding experience) exploring prompt engineering and Hubitat development. I knew a professional developer could likely have built it more efficiently, but for me, this was a hands-on way to learn the dos and don’ts, and experience the occasional “why on earth did you do that?” moments in AI-driven development.
 
@@ -71,9 +72,9 @@ For complete instructions on installation, setup, and configuration, see the ful
 3. Select the driver and follow the installation prompts.  
 4. Once installed, proceed to Driver Configuration to complete setup.
 
-### 🔧 Manual Install
+### 🛠️ Manual Install
 
-#### 🔹 Driver Code Install
+#### 💾 Driver Code Install
 1. In Hubitat, go to Drivers Code → click + New Driver.  
 2. Copy the full code from googlePollenForecaster.groovy or important the raw code for this link:
 ```
@@ -81,7 +82,7 @@ https://raw.githubusercontent.com/DGBQ/HubitatProjects-Public/main/drivers/Googl
 ```
 3. Click Save to install the driver.
 
-#### 🔹 Virtual Device Install
+#### 🪄 Virtual Device Install
 1. Go to Devices → + Add Device → select Virtual.  
 2. In the Type dropdown, choose Google Pollen Forecaster Driver.  
 3. Name your new device (e.g., Pollen Forecast – Home).  
@@ -98,7 +99,7 @@ https://raw.githubusercontent.com/DGBQ/HubitatProjects-Public/main/drivers/Googl
 5. Click Save Preferences.  
 6. Go to the Commands tab and select Poll to fetch your first forecast.  
 
->💡 Tip: If Current States don’t refresh immediately, close and reopen the device page — this is a known Hubitat UI behavior.
+💡 Tip: If Current States don’t refresh immediately, close and reopen the device page — this is a known Hubitat UI behavior.
 
 ---
 
@@ -115,7 +116,7 @@ To use the Google Pollen Forecaster Driver, you’ll need an active Google API K
 7. Set usage limits (optional but recommended) to control daily API calls.  
 8. Copy your API key and paste it into the Google API Key field under the driver’s Preferences in Hubitat.
 
->📄 Detailed instructions: [Get Google API Key](documents/GetGoogleAPIKey_GooglePollenForecaster.md)
+📄 Detailed instructions: [Get Google API Key](documents/GetGoogleAPIKey_GooglePollenForecaster.md)
 
 ---
 
@@ -140,7 +141,7 @@ The driver supports 20 pollen types, including:
 
 Quick summary: Lists all pollen types tracked by the Google API, including tree, grass, and weed categories used in driver attributes.  
 
-> Full list: 📄 [Pollen Types Supported](documents/PollenTypesSupported_GooglePollenForecaster.md).
+Full list: 📄 [Pollen Types Supported](documents/PollenTypesSupported_GooglePollenForecaster.md).
 
 ---
 
@@ -181,10 +182,6 @@ HubitatProjects-Public
         ├─ CHANGELOG.md
 		├─ CONTRIBUTING.md        
 		└─ googlePollenForecaster.groovy
-
-	
-	
-
 ```
 
 ---
@@ -193,13 +190,11 @@ HubitatProjects-Public
 
 For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo/google-pollen-forecaster/issues) page rather than the Hubitat Community forums. This ensures issues are tracked, discussed, and resolved in an organized manner.
 
-- Provide a clear description of the issue.  
-- Include relevant screenshots, logs, or steps to reproduce.  
-- Check existing issues to avoid duplicates.
+- Include Hubitat firmware version, driver version (if available), and exact steps to reproduce.  
+- Attach relevant logs and screenshots. Mask any sensitive data.  
+- Search existing issues first to avoid duplicates.
 
->💬 Kindly avoid posting bug reports directly in the Hubitat Community thread — it
-> helps keep discussions organized and ensures your report is properly tracked
-> and resolved.  
+💬 Kindly avoid posting bug reports directly in the Hubitat Community thread — it helps keep discussions organized and ensures your report is properly tracked and resolved.  
 
 ---
 
@@ -213,21 +208,18 @@ If you’re interested in extending or enhancing the driver, you’re encouraged
 - Follow Hubitat conventions for drivers and include well-commented code.  
 - See 📄 Contributing Guide for process and style rules.
 
-> 🟡Please note that response times for reviews or merges may vary due to personal
->  and professional commitments, but all thoughtful contributions will be read and
-> appreciated.
->
-> 💡 Tip: Respecting attribution helps keep open-source projects like this thriving, and it’s always fun to see how others experiment and build upon these drivers.
+🟡Please note that response times for reviews or merges may vary due to personal  and professional commitments, but all thoughtful contributions will be read and appreciated.
+
+💡 Tip: Respecting attribution helps keep open-source projects like this thriving, and it’s always fun to see how others experiment and build upon these drivers.
 
 ---
 
-## 📜 License & Versioning
+## ⚖️ License & Versioning
 
 - **License:** All projects in this repository are shared under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0), which allows you to freely use, modify, and distribute the code while providing proper attribution.  
 - **Versioning:** Each driver or app maintains its own `CHANGELOG.md` for version history. Please refer to the project-specific changelog for detailed release notes and updates.
 
-> 💡 Tip: Respecting attribution helps keep open-source projects like this thriving,
-> and it’s always fun to see how others experiment and build upon these drivers.
+💡 Tip: Respecting attribution helps keep open-source projects like this thriving, and it’s always fun to see how others experiment and build upon these drivers.
 
 ---
 
@@ -246,9 +238,7 @@ No external references have been added yet. This section will be updated in a fu
 - **AI-assisted development:** All drivers were developed with the assistance of AI to my specifications. While I have tested and refined the code, AI-assisted outputs may include quirks, non-standard patterns, or unexpected behavior. Use caution and review thoroughly before deploying in critical systems.  
 - **External dependencies:** Any third-party libraries, dashboards, or tools referenced in this repository are the responsibility of the respective developers. Users should ensure compatibility and review documentation before integrating.  
 
-> ⚠️ Important: Always backup your Hubitat setup and test automation changes
-> incrementally. This repository is intended for educational and experimental
-> purposes; professional judgment is required when deploying in your home.
+⚠️ Important: Always backup your Hubitat setup and test automation changes  incrementally. This repository is intended for educational and experimental purposes; professional judgment is required when deploying in your home.
 
 ---
 

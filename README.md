@@ -12,15 +12,14 @@
 <summary>Click to expand Table of Contents</summary>
 
 - [🧭 Overview](#-overview)
-- [📦 Repository Contents](#-repository-contents)
-  - [🛠️ Current Drivers](#-current-drivers)
-    - [Google Pollen Forecaster](#google-pollen-forecaster)
-  - [🔮 Future Projects](#-future-projects)
+- [🗂️ Repository Contents](#-repository-contents)
+   - [🛠️ Current Drivers](#-current-drivers)
+   - [🔮 Future Projects](#-future-projects)
 - [🤝 Contribution & Support](#-contribution--support)
   - [🐞 Reporting Bugs](#-reporting-bugs)
   - [✨ Contributing](#-contributing)
-- [📜 License & Versioning](#-license--versioning)
-- [📘 References / External Links](#-references--external-links)
+- [⚖️ License & Versioning](#-license--versioning)
+- 🔗 [References / External Links](#-references--external-links)
 - [🛡️ Disclaimers](#-disclaimers)
 - [📝 Revision History](#-revision-history)
 
@@ -48,7 +47,7 @@ This repository hosts a collection of **Hubitat drivers** and possible future Hu
 
 ### 🪛 Current Drivers
 
-#### Google Pollen Forecaster
+#### 🌿Google Pollen Forecaster
 - **Folder:** `drivers/GooglePollenForecaster/`  
 - **Purpose:** Provides daily pollen forecasts.  
 - **Files included:**  
@@ -78,13 +77,11 @@ I welcome contributions, suggestions, and bug reports for all projects in this r
 ### 🐞 Reporting Bugs
 For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo/google-pollen-forecaster/issues) page rather than the Hubitat Community forums. This ensures issues are tracked, discussed, and resolved in an organized manner.
 
-- Provide a clear description of the issue.  
-- Include relevant screenshots, logs, or steps to reproduce.  
-- Check existing issues to avoid duplicates.
+- Include Hubitat firmware version, driver version (if available), and exact steps to reproduce.  
+- Attach relevant logs and screenshots. Mask any sensitive data.  
+- Search existing issues first to avoid duplicates.
 
->💬 Kindly avoid posting bug reports directly in the Hubitat Community
->thread — it helps keep discussions organized and ensures your report is properly
->tracked and resolved.  
+💬 Kindly avoid posting bug reports directly in the Hubitat Community thread — it helps keep discussions organized and ensures your report is properly tracked and resolved.  
 
 ---
 
@@ -94,17 +91,13 @@ For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo
 - Follow Hubitat conventions and include clear, well-commented code.  
 - Review the 📄 Contributing Guide for process and style rules.  
 
-> 🟡Please note that response times for reviews or merges may vary due to personal
->  and professional commitments, but all thoughtful contributions will be read and
-> appreciated. And yes, Ollie may supervise your work too—he gives it a solid 3 out of
->  5 dramatic flops.
+🟡Please note that response times for reviews or merges may vary due to personal   and professional commitments, but all thoughtful contributions will be read and appreciated. And yes, Ollie may supervise your work too—he gives it a solid 3 out of 5 dramatic flops.
 
-> 💡 Tip: Respecting attribution helps keep open-source projects like this thriving,
-> and it’s always fun to see how others experiment and build upon these drivers.
+💡 Tip: Respecting attribution helps keep open-source projects like this thriving, and it’s always fun to see how others experiment and build upon these drivers.
 
 ---
 
-## 📜 License & Versioning
+## ⚖️ License & Versioning License & Versioning
 
 - **License:** All projects in this repository are shared under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0), which allows you to freely use, modify, and distribute the code while providing proper attribution.  
 - **Versioning:** Each driver or app maintains its own `CHANGELOG.md` for version history. Please refer to the project-specific changelog for detailed release notes and updates.
@@ -137,9 +130,7 @@ For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo
 - **AI-assisted development:** All drivers were developed with the assistance of AI to my specifications. While I have tested and refined the code, AI-assisted outputs may include quirks, non-standard patterns, or unexpected behavior. Use caution and review thoroughly before deploying in critical systems.  
 - **External dependencies:** Any third-party libraries, dashboards, or tools referenced in this repository are the responsibility of the respective developers. Users should ensure compatibility and review documentation before integrating.  
 
-> ⚠️ Important: Always backup your Hubitat setup and test automation changes
-> incrementally. This repository is intended for educational and experimental
-> purposes; professional judgment is required when deploying in your home.
+⚠️ Important: Always backup your Hubitat setup and test automation changes  incrementally. This repository is intended for educational and experimental purposes; professional judgment is required when deploying in your home.
 
 ---
 
