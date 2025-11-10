@@ -1,13 +1,13 @@
 # My Hubitat Projects - Public Repository 
 
 ## 🔢 Version
-- **Document Version:** 1.0.1  
-- **Date:** 2025-11-05  
+- **Document Version:** 1.0.3
+- **Date:** 2025-11-10  
 - **Author:** DBQ
 
 ---
 
-## 📂 Table of Contents
+## 📑Table of Contents
 <details>
 <summary>Click to expand Table of Contents</summary>
 
@@ -40,13 +40,13 @@ Currently, the repository includes tools like **Google Pollen Forecaster** and m
 
 ---
 
-## 📦 Repository Contents
+## 🗂️ Repository Contents
 
 This repository hosts a collection of **Hubitat drivers** and possible future Hubitat Applications. Each project includes installation guides, configuration instructions, and technical references.  
 
 ---
 
-### 🛠️ Current Drivers
+### 🪛 Current Drivers
 
 #### Google Pollen Forecaster
 - **Folder:** `drivers/GooglePollenForecaster/`  
@@ -76,10 +76,15 @@ I welcome contributions, suggestions, and bug reports for all projects in this r
 ---
 
 ### 🐞 Reporting Bugs
-- For issues or bugs, use the **GitHub Issues** page of the specific project.  
-  💬 Kindly avoid posting bug reports directly in the Hubitat Community thread — it helps keep discussions organized and ensures your report is properly tracked and resolved.  
-- Follow Hubitat conventions and include clear, well-commented code.  
-- Review the 📄 Contributing Guide for process and style rules.  
+For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo/google-pollen-forecaster/issues) page rather than the Hubitat Community forums. This ensures issues are tracked, discussed, and resolved in an organized manner.
+
+- Provide a clear description of the issue.  
+- Include relevant screenshots, logs, or steps to reproduce.  
+- Check existing issues to avoid duplicates.
+
+>💬 Kindly avoid posting bug reports directly in the Hubitat Community
+>thread — it helps keep discussions organized and ensures your report is properly
+>tracked and resolved.  
 
 ---
 
@@ -89,7 +94,13 @@ I welcome contributions, suggestions, and bug reports for all projects in this r
 - Follow Hubitat conventions and include clear, well-commented code.  
 - Review the 📄 Contributing Guide for process and style rules.  
 
-> Response times for reviews or merges may vary, but all thoughtful contributions are read and appreciated. And yes, Ollie may supervise your work too—he gives it a solid 3 out of 5 dramatic flops.
+> 🟡Please note that response times for reviews or merges may vary due to personal
+>  and professional commitments, but all thoughtful contributions will be read and
+> appreciated. And yes, Ollie may supervise your work too—he gives it a solid 3 out of
+>  5 dramatic flops.
+
+> 💡 Tip: Respecting attribution helps keep open-source projects like this thriving,
+> and it’s always fun to see how others experiment and build upon these drivers.
 
 ---
 
@@ -98,18 +109,17 @@ I welcome contributions, suggestions, and bug reports for all projects in this r
 - **License:** All projects in this repository are shared under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0), which allows you to freely use, modify, and distribute the code while providing proper attribution.  
 - **Versioning:** Each driver or app maintains its own `CHANGELOG.md` for version history. Please refer to the project-specific changelog for detailed release notes and updates.
 
-> 💡 Tip: Respecting attribution helps keep open-source projects like this thriving, and it’s always fun to see how others experiment and build upon these drivers.
-
 ---
 
-## 📘 References / External Links
+## 🔗 References / External Links
 
 - [Hubitat Community Forum](https://community.hubitat.com/) — support, discussions, and tips from the community.  
 - [HD+ Android Dashboard](https://community.hubitat.com/t/release-hd-android-dashboard/41674) — dashboard used with some projects.  
 - [Tile Builder](https://community.hubitat.com/t/release-tile-builder-build-beautiful-dashboards/118822) — build custom tiles for your dashboards.  
 - [WebCoRE for Hubitat](https://community.hubitat.com/t/webcore-2-0-released/210) — the rules engine I personally use for automation.  
 - [Rule Machine for Hubitat](https://docs.hubitat.com/index.php?title=Rule_Machine) — powerful automation engine.  
-  > ⚠️ Disclaimer: I haven’t personally used Rule Machine much. Please reach out to the Hubitat Community for guidance if needed.  
+  > ⚠️ Disclaimer: I haven’t personally used Rule Machine much. Please reach out to
+  > the Hubitat Community for guidance if needed.  
 - Google APIs:  
   - [Google Pollen API](#) — used for pollen forecasts.  
   - [Google Air Quality API](#) — future expansion.  
@@ -123,11 +133,13 @@ I welcome contributions, suggestions, and bug reports for all projects in this r
 - **User responsibility:** You assume full responsibility for any automation decisions, device actions, or outcomes resulting from the use of these drivers or apps. Always test in a safe environment before full deployment.  
 - **Google API usage:** Access to Google APIs (Pollen, Air Quality, Weather) is subject to Google’s terms of service, quotas, and billing requirements. Ensure compliance and monitor your usage accordingly.  
 - **Community-developed / Non-affiliation:** This repository is independently developed and maintained. It is **not affiliated with Google LLC**, Hubitat Inc., or any other company mentioned.  
-- **Information accuracy:** Development was performed using the best available knowledge and resources at the time. APIs, Hubitat functionality, or integration methods may change over time, potentially affecting functionality.  
+- **Information accuracy:** Development was performed using the best available knowledge and resources at the time. APIs, Hubitat functionality, or integration methods may change over time, potentially affecting functionality.  Please report any issues encountered.
 - **AI-assisted development:** All drivers were developed with the assistance of AI to my specifications. While I have tested and refined the code, AI-assisted outputs may include quirks, non-standard patterns, or unexpected behavior. Use caution and review thoroughly before deploying in critical systems.  
 - **External dependencies:** Any third-party libraries, dashboards, or tools referenced in this repository are the responsibility of the respective developers. Users should ensure compatibility and review documentation before integrating.  
 
-> ⚠️ Important: Always backup your Hubitat setup and test automation changes incrementally. This repository is intended for educational and experimental purposes; professional judgment is required when deploying in your home.
+> ⚠️ Important: Always backup your Hubitat setup and test automation changes
+> incrementally. This repository is intended for educational and experimental
+> purposes; professional judgment is required when deploying in your home.
 
 ---
 
@@ -135,5 +147,7 @@ I welcome contributions, suggestions, and bug reports for all projects in this r
 
 | Version | Date       | Author | Changes                                                      |
 |---------|------------|--------|--------------------------------------------------------------|
+| 1.0.3   | 2025-11-10 | DBQ    | Formating changes, some wording changes                      |
+| 1.0.2   | 2025-11-10 | DBQ    | Formating changes, some wording changes                      |
 | 1.0.1   | 2025-11-06 | DBQ    | Tweak some wording and added "coming soon"                   |
 | 1.0.0   | 2025-11-05 | DBQ    | Initial release of top-level README and repository structure |
