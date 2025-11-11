@@ -1,9 +1,11 @@
-# 🤝 Contributing to the Google Pollen Forecaster Driver
+# 🤝 Contributing - Google Pollen Forecaster
+### _driver for Hubitat_  
 
 ## 🔢 Version
 **Version:** 1.0.1  
 **Date:** 2025-10-31  
-**Author:** David Ball-Quenneville
+**Managing Author:** David Ball-Quenneville  
+**Associate Author:** ChatGPT
 
 ---
 
@@ -125,7 +127,7 @@ Thanks to the Hubitat Community for inspiration, the contributors who test and i
 
 ## 📝 Revision History
 
-| Version | Date       | Author | Changes                                                               |
-|---------|------------|--------|-----------------------------------------------------------------------|
-| 1.0.1   | 2025-11-10 | DBQ    | Refinements to format and phrasing                                    |
-| 1.0.0   | 2025-10-31 | DBQ    | Initial CONTRIBUTING.md aligned with Hubitat Markdown & Voice Guides. |
+| Version | Date       | Author      | Changes                                                               |
+|---------|------------|-------------|-----------------------------------------------------------------------|
+| 1.0.1   | 2025-11-10 | DBQ/ChatGpt | Refinements to format and phrasing                                    |
+| 1.0.0   | 2025-10-31 | DBQ/ChatGpt | Initial CONTRIBUTING.md aligned with Hubitat Markdown & Voice Guides. |

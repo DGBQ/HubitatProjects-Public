@@ -1,13 +1,13 @@
 # 🌿 Google Pollen Forecaster
-_driver for Hubitat_  
+### _driver for Hubitat_  
 
 ## 🚧 **_COMING SOON_ – in pre-beta testing** 🚧
-
 
 ## 🔢 Version
 **Documentation Version:** 1.1.  
 **Last Updated:** 2025-11-10  
-**Author:** David Ball-Quenneville  
+**Managing Author:** David Ball-Quenneville  
+**Associate Author:** ChatGPT
 
 ---
 
@@ -244,10 +244,10 @@ No external references have been added yet. This section will be updated in a fu
 
 ## 📝 Revision History
 
-| Version | Date       | Author | Description                                                                                                                                                   |
-|---------|------------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1.1.3   | 2025-11-10 | DBQ    | Format tweaking, wording changes etc.                                                                                                                         |
-| 1.1.2   | 2025-11-10 | DBQ    | Format tweaking, wording changes etc.                                                                                                                         |
-| 1.1.1   | 2025-11-07 | DBQ    | Updated sections, improved wording etc.                                                                                                                       |
-| 1.1     | 2025-10-30 | DBQ    | Added Background & Motivation, Reporting Bugs, integrated approved Quick Start, Getting Your Google API Key, Example Use Cases; updated ToC and doc metadata. |
-| 1.0     | 2025-10-15 | DBQ    | Initial document creation for the Google Pollen Forecaster Driver.                                                                                            |
+| Version | Date       | Author      | Description                                                                                                                                                   |
+|---------|------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1.1.3   | 2025-11-10 | DBQ/ChatGpt | Format tweaking, wording changes etc.                                                                                                                         |
+| 1.1.2   | 2025-11-10 | DBQ/ChatGpt | Format tweaking, wording changes etc.                                                                                                                         |
+| 1.1.1   | 2025-11-07 | DBQ/ChatGpt | Updated sections, improved wording etc.                                                                                                                       |
+| 1.1     | 2025-10-30 | DBQ/ChatGpt | Added Background & Motivation, Reporting Bugs, integrated approved Quick Start, Getting Your Google API Key, Example Use Cases; updated ToC and doc metadata. |
+| 1.0     | 2025-10-15 | DBQ/ChatGpt | Initial document creation for the Google Pollen Forecaster Driver.                                                                                            |
