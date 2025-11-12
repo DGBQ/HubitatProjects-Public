@@ -224,7 +224,22 @@ If you’re interested in extending or enhancing the driver, you’re encouraged
 ---
 
 ## 🔗 References / External Links
-No external references have been added yet. This section will be updated in a future release.
+
+**Changelog and Contribution** 
+📘 [Change log](CHANGELOG.md)
+📘 [Contribution](CONTRIBUTING.md)
+
+**Installation and Setup**
+📘[Getting Your Google API Key](documents/)
+
+**Utilities and Troubleshooting**
+📘[Checking Your Data](documents/CheckYourData_GooglePollenForecaster.md)
+
+**Reference and Information**
+📘*Content TBD – coming in a future update.*
+
+**Miscellaneous / Other**
+📘*Content TBD – coming in a future update.*
 
 ---
 
@@ -246,8 +261,5 @@ No external references have been added yet. This section will be updated in a fu
 
 | Version | Date       | Author      | Description                                                                                                                                                   |
 |---------|------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1.1.3   | 2025-11-10 | DBQ/ChatGpt | Format tweaking, wording changes etc.                                                                                                                         |
-| 1.1.2   | 2025-11-10 | DBQ/ChatGpt | Format tweaking, wording changes etc.                                                                                                                         |
-| 1.1.1   | 2025-11-07 | DBQ/ChatGpt | Updated sections, improved wording etc.                                                                                                                       |
-| 1.1     | 2025-10-30 | DBQ/ChatGpt | Added Background & Motivation, Reporting Bugs, integrated approved Quick Start, Getting Your Google API Key, Example Use Cases; updated ToC and doc metadata. |
+| 1.0.1   | 2025-10-30 | DBQ/ChatGpt | Added Background & Motivation, Reporting Bugs, integrated approved Quick Start, Getting Your Google API Key, Example Use Cases; updated ToC and doc metadata. |
 | 1.0     | 2025-10-15 | DBQ/ChatGpt | Initial document creation for the Google Pollen Forecaster Driver.                                                                                            |
