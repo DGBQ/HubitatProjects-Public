@@ -2,70 +2,66 @@
 ### _Driver for Hubitat_
 
 ## 🔢 Version
-**Document Version:** Draft
-**Date:** 2025-12-8
+**Document Version:** 0.10 (Draft)
+**Date:** 2025-12-8  
 **Managing Author:** David Ball-Quenneville  
-**Associate Author:** ChatGPT  and Gemini
+**Associate Author:** ChatGPT and Gemini
 
-## 📑 Table of Contents  
-<details>  
-<summary>Click to expand Table of Contents</summary>  
+## 📑 Table of Contents
+<details>
+<summary>Click to expand Table of Contents</summary>
 
-- 🧭[Overview](#overview--)
-- ⬇️[Installation](#installation)
-- 🛠️[Setup](#setup)
-- ⚖️[Configuration](#configuration)
-    - ➡️[Commands](#commands)
-        - 🧮[Poll](#polling-button)
-    - 🎛️[Preferences](#preferences)
-        - 🔑[Google Pollen API Key](#google-pollen-api-key)
-        - ⏰[Primary Daily Poll](#primary-daily-poll)
-        - ⏰[Secondary Daily Poll](#)
-        - 🛑[Max API Calls Per Day](#)
-        - 🗺️[Use Custom Coordinates](#)
-        - 🚫 [Use Blockout Dates?](#)
-        - 
-- 📝 [Summary](#summary)  
-- 🛡️ [Disclaimers](#disclaimers)  
+- 🧭 [Overview](#overview)
+- ⬇️ [Installation](#installation)
+- 🛠️ [Setup](#setup)
+- ⚖️ [Configuration](#configuration)
+  - ➡️ [Commands](#commands)
+    - 🧮 [Poll](#polling-button)
+  - 🎛️ [Preferences](#preferences)
+    - 🔑 [Google Pollen API Key](#google-pollen-api-key)
+    - ⏰ [Primary Daily Poll](#primary-daily-poll)
+    - ⏰ [Secondary Daily Poll](#secondary-daily-poll)
+    - 🛑 [Max API Calls Per Day](#max-api-calls-per-day)
+    - 🗺️ [Use Custom Coordinates](#use-custom-coordinates)
+    - 🚫 [Use Blockout Dates?](#use-blockout-dates)
+- 📝 [Summary](#summary)
+- 🛡️ [Disclaimers](#disclaimers)
 - 🔗 [Reference / External Links](#reference--external-links)
-- 📝 [Revision History](#revision-history)  
+- 📝 [Revision History](#revision-history)
 
-</details>  
+</details>
 
 ---
+
 ## 🧭 Overview
 
-> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.
->
+> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
 > Please check back in a future Beta release for the complete guide. Thank you for your patience!
 
 ---
 
-## ⬇️Installation
+## ⬇️ Installation
 
-> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.
->
+> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
 > Please check back in a future Beta release for the complete guide. Thank you for your patience!
 
 ---
 
-##  🛠️[Setup
+## 🛠️ Setup
 
-> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.
->
+> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
 > Please check back in a future Beta release for the complete guide. Thank you for your patience!
 
 ---
 
-## - ⚖️Configuration
+## ⚖️ Configuration
 
-> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.
->
+> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
 > Please check back in a future Beta release for the complete guide. Thank you for your patience!
 
-### ➡️Commands
-> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.
->
+### ➡️ Commands
+
+> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
 > Please check back in a future Beta release for the complete guide. Thank you for your patience!
 
 #### 🧮 Polling (Button)
@@ -77,31 +73,31 @@ This command is primarily used to:
 * **Manually Force an Update:** Bypass the regular scheduled polling intervals to retrieve new data immediately.
 * **Troubleshoot:** Quickly test the API key and location settings to verify connectivity.
 
-#####  📌Options and Parameters
+##### 📌 Options and Parameters
 | Parameter | Description | Valid Options |
 | :--- | :--- | :--- |
 | **(None)** | This command is designed for manual execution and accepts no additional parameters. | N/A |
 
-#####  💡Hints and Best Practices
+##### 💡 Hints and Best Practices
 * **API Call Consumption:** Because the driver does **not** check a data cache before execution, clicking the **Poll** button will **always** consume one API call from your daily quota. Use this command sparingly.
 * **Blockout Constraint:** If the `Use Blockout Dates?` preference is enabled in **Preferences** and the current date/time falls within a blockout period, the poll will be prevented.
 * **Blockout Feedback:** If the poll is blocked, you will see a message in your Hubitat Logs (`Logs` tab), and the device's `apiStatus` attribute will change to **Blockout** until the blockout period ends.
 
 ---
-### 🎛️Preferences
 
-> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.
->
+### 🎛️ Preferences
+
+> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
 > Please check back in a future Beta release for the complete guide. Thank you for your patience!
 
-#### 🔑Google Pollen API Key
+#### 🔑 Google Pollen API Key
 
 > **Description:** The unique security key provided by Google Cloud, which authenticates your Hubitat driver and authorizes data access to the Google Pollen API.
 
-##### 🎯Purpose and Use
+##### 🎯 Purpose and Use
 This is a **mandatory prerequisite** for the driver. Without a valid API key, the driver cannot establish a connection, request, or receive *any* pollen forecast data. This field is the sole requirement for securing access to the Google API service.
 
-##### 📌Options and Values
+##### 📌 Options and Values
 | Field Type | Value Range | Default Value |
 | :--- | :--- | :--- |
 | **Text Input** | Full alphanumeric string provided by Google Cloud | (Empty) |
@@ -113,26 +109,26 @@ This is a **mandatory prerequisite** for the driver. Without a valid API key, th
 * **Security:** Treat your API key as a password. It should never be shared publicly (e.g., in forum posts or shared screenshots), as it is linked directly to your Google Cloud billing account and quota.
 * **Activation:** Ensure that the Google Pollen API service is enabled within your Google Cloud project for the provided key to be valid.
 
-#### ⏰Primary Daily Poll
+#### ⏰ Primary Daily Poll
 
 > **Description:** Sets the mandatory, optimal time each day for the driver to attempt to fetch the latest Google Pollen Forecast data. This is the primary attempt to capture the new daily forecast data as soon as it is released.
 
-##### 🎯Purpose and Use
+##### 🎯 Purpose and Use
 This setting is crucial for ensuring your device receives the newest daily forecast data as early as possible. It is intended to run at a time when the new forecast is typically available from the Google API, ensuring data freshness for the entire day.
 
-##### 📌Options and Values
+##### 📌 Options and Values
 | Field Type | Value Range | Default Value |
 | :--- | :--- | :--- |
 | **Time Selector** | Hour, Minute, AM/PM Pick List | 6:00 AM |
 
 * **Example:** Setting this to **6:00 AM** means the driver will schedule its main daily retrieval job for 6:00 AM every morning.
 
-##### 💡Hints and Best Practices
+##### 💡 Hints and Best Practices
 * **Required Field:** This is a required field, as the forecast data release is daily.
 * **API Impact:** This setting guarantees **one API call per day** (at the specified time) dedicated to fetching the new daily forecast.
 * **Timing:** The default of 6:00 AM is recommended as it balances early retrieval with typical hub schedules.
 
-#### ⏰Secondary Daily Poll
+#### ⏰ Secondary Daily Poll
 
 > **Description:** Sets a backup time each day for the driver to attempt to fetch the latest Google Pollen Forecast data. This is a fail-safe to ensure the new forecast data is captured if the Primary Daily Poll fails.
 
@@ -153,7 +149,7 @@ This setting is essential for **driver reliability** and is used to:
 * **API Impact:** This setting guarantees a **second API call per day** (at the specified time). Together, the Primary and Secondary polls ensure two dedicated API calls per 24 hours for the new forecast.
 * **Spacing:** It is strongly recommended to set the Secondary Poll time **3 to 4 hours after** the Primary Poll time to allow enough time for transient issues to resolve.
 
-#### 🛑Max API Calls Per Day
+#### 🛑 Max API Calls Per Day
 
 > **Description:** Defines the maximum number of times the driver is permitted to communicate with the Google Pollen API within a 24-hour window (midnight to midnight UTC/Hub time). This limit applies to all scheduled and manual poll attempts.
 
@@ -175,7 +171,7 @@ This setting is essential for proactive cost and quota management. It is designe
 * **Driver Feedback:** If you attempt to poll manually after the limit is exceeded, the device's **`apiStatus`** attribute will update to indicate that the daily maximum poll limit has been reached, preventing further attempts until the reset time.
 * **API Impact:** Every execution of a Primary, Secondary, or Manual poll counts as one consumption against this limit.
 
-#### 🗺️Use Custom Coordinates
+#### 🗺️ Use Custom Coordinates
 
 > **Description:** A toggle that determines the source of the geographical coordinates used for fetching the pollen forecast. When **Off**, the driver uses the location data pre-configured in your Hubitat Hub settings. When **On**, it allows for the entry of custom latitude and longitude values. **If switched Off, the coordinates immediately revert to the Hub's saved location data and will be used on the next scheduled poll or manual polling.**
 
@@ -199,7 +195,7 @@ When the toggle is **On**, the following three fields become visible for user in
 * **Multi-Location Setup:** To monitor pollen for two different places (e.g., your Home Hub location and a Cottage), you can install the driver twice, using the custom coordinate option in the second installation.
 * **Polling:** Changing the coordinates does **not** automatically trigger a poll. After setting new custom coordinates, you must use the **Poll (Button)** to immediately fetch the new location's forecast data.
 
-#### 🚫Use Blockout Dates?
+#### 🚫 Use Blockout Dates?
 
 > **Description:** A toggle that allows the user to define an annual period during which the driver is prevented from making *any* calls to the Google Pollen API. This feature helps prevent unnecessary API usage and saves quota during the pollen off-season.
 
@@ -220,19 +216,19 @@ When the toggle is **On**, the following two fields become visible for user inpu
 * **Mandatory Refresh:** After changing this toggle's state or setting the dates, you **must close and reopen the device driver page** in the Hubitat interface to display or hide the date picker fields correctly.
 * **Annual Roll-Forward:** This is an automated convenience feature. Once the driver successfully exits an active blockout period, it will automatically calculate and set the new **Blockout Start Date** and **Blockout End Date** one year into the future. This prepares the driver for the next off-season without further manual intervention.
 * **Polling Resumption:** If the toggle is switched **Off** while a blockout is active, the driver will immediately use the Hub's scheduler to resume normal polling operations on the next scheduled time.
-* **Quota Savings:** This feature is highly recommended for reducing API consumption when you know the monitored pollens are not relevant in your area (e.g., winter months).
+* **Quota Savings:** This feature is highly recommended for reducing API consumption when you know the monitored pollen are not relevant in your area (e.g., winter months).
 
 ---
 
 ## 📝 Summary
 
-> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.
->
+> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
 > Please check back in a future Beta release for the complete guide. Thank you for your patience!
 
 ---
 
 ## 🛡️ Disclaimers
+
 ⚠️ Important: Always backup your Hubitat setup and test automation changes incrementally. This repository is intended for educational and experimental purposes only. Professional judgment is required when deploying in your home.
 
 **Provided As-Is:** All drivers and apps in this repository are provided as-is, without any warranty or guarantee of suitability for your particular setup. Use at your own risk.
@@ -252,17 +248,13 @@ When the toggle is **On**, the following two fields become visible for user inpu
 ---
 
 ## 🔗 Reference / External Links
+
 📘 [Google Pollen API Documentation](https://developers.google.com/pollen)  
 📘 [Google Pollen API Supported Countries & Plants](https://www.google.com/search?q=Google+pollen+API+supported+countries+plants)
 
 ---
 
 ## 📝 Revision History
-
-| Version | Date       | Changes                                                                |
-|---------|------------|------------------------------------------------------------------------|
-| TBD     | TBD        | TBD                                                                    |
-| 1.0     | 2025-11-25 | Initial release of Google Pollen Forecaster End User Guide for Hubitat |
-
-
-
+| Version | Date       | Changes           |
+|---------|------------|-------------------|
+| 0.1     | 2025-12-08 | Draft of Document |
