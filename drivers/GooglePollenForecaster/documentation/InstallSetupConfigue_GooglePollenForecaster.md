@@ -27,7 +27,7 @@
 - 📝 [Summary](#summary)
 - 🛡️ [Disclaimers](#disclaimers)
 - 🔗 [Reference / External Links](#reference--external-links)
-- 📝 [Revision History](#revision-history)
+- 📜 [Revision History](#revision-history)
 
 </details>
 
@@ -254,7 +254,7 @@ When the toggle is **On**, the following two fields become visible for user inpu
 
 ---
 
-## 📝 Revision History
-| Version | Date       | Changes           |
-|---------|------------|-------------------|
-| 0.1     | 2025-12-08 | Draft of Document |
+## 📜 Revision History
+| Version | Date       | Author | Changes           |
+|---------|------------|--------|-------------------|
+| 0.1     | 2025-12-08 | DBQ    | Draft of Document |
