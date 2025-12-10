@@ -2,8 +2,8 @@
 ### _Driver for Hubitat_
 
 ## 🔢 Version
-**Document Version:** 0.10 (Draft)
-**Date:** 2025-12-8  
+**Document Version:** 0.11 (Draft)
+**Date:** 2025-12-10  
 **Managing Author:** David Ball-Quenneville  
 **Associate Author:** ChatGPT and Gemini
 
@@ -24,6 +24,14 @@
     - 🛑 [Max API Calls Per Day](#max-api-calls-per-day)
     - 🗺️ [Use Custom Coordinates](#use-custom-coordinates)
     - 🚫 [Use Blockout Dates?](#use-blockout-dates)
+    - 🔄 [Auto-Reset Errors at Midnight](#auto-reset-errors-at-midnight)
+    - 🛡️ [Advanced API Retry Settings](#advanced-api-retry-settings)
+    - 🌱 [Pollen Type Group Selection](#pollen-type-group-selection)
+    - 🧬[Individual Pollen Species (Granular Data)](#individual-pollen-species-granular-data)
+- 🏷️ [Current States (Device Attributes)](#current-states-device-attributes)
+    - 🔬 [Summary Pollen Data](#summary-pollen-data)
+    - 📊[Driver Status and Metadata](#driver-status-and-metadata)
+    - 🌿 [Granular Pollen Data (Conditional)](#granular-pollen-data-conditional)    
 - 📝 [Summary](#summary)
 - 🛡️ [Disclaimers](#disclaimers)
 - 🔗 [Reference / External Links](#reference--external-links)
@@ -35,8 +43,14 @@
 
 ## 🧭 Overview
 
-> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
-> Please check back in a future Beta release for the complete guide. Thank you for your patience!
+This document provides a complete walkthrough for installing, setting up, and configuring the **Google Pollen Forecaster** driver on Hubitat. It begins with the steps required to add the driver to your hub, enter your Google Pollen API key, and confirm the initial connection. From there, it guides you through all available configuration options, including location settings, polling schedules, blockout periods, quota protection controls, species-level data toggles, and troubleshooting tools.
+
+Each section is organized to mirror the driver’s workflow:  
+1) **Install** the driver code,  
+2) **Set up** your API access and basic settings, and  
+3) **Configure** advanced options to tailor the driver’s behavior to your environment.
+
+By the end, you’ll understand how the driver operates, how data is retrieved and updated, and how to use the reported attributes in dashboards, rules, and automations. This overview serves as a roadmap for the detailed instructions and reference material that follow.
 
 ---
 
@@ -49,20 +63,19 @@
 
 ## 🛠️ Setup
 
-> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
-> Please check back in a future Beta release for the complete guide. Thank you for your patience!
+Getting started with the driver is simple: just enter your **Google Pollen API key** and save the change, and the driver will begin retrieving data using its default settings. While it works out-of-the-box with minimal setup, reviewing the [**Configuration**](#configurationsection) section is recommended to unlock its full potential—fine-tune polling schedules, enable species-level tracking, manage blockout periods, and adjust other settings for more accurate and reliable pollen forecasts.
+
 
 ---
 
 ## ⚖️ Configuration
 
-> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
-> Please check back in a future Beta release for the complete guide. Thank you for your patience!
+The configuration section guides you through all the adjustable settings that control how the **Google Pollen Forecaster** driver behaves on Hubitat. Here you’ll set your preferred polling schedules, manage blockout periods, enable or disable species-level data, and choose options that help protect your Google API quota. You can also customize location handling, notification behaviour, and other advanced features to match your environment. Each option is explained clearly so you can understand what it does and how it affects data updates, status reporting, and driver performance.
+
 
 ### ➡️ Commands
 
-> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
-> Please check back in a future Beta release for the complete guide. Thank you for your patience!
+The Commands section explains the manual actions you can trigger directly from the device page to control how the Google Pollen Forecaster retrieves data. These commands are useful for testing, troubleshooting, and forcing immediate updates outside the scheduled polling routine.
 
 #### 🧮 Polling (Button)
 
@@ -87,8 +100,7 @@ This command is primarily used to:
 
 ### 🎛️ Preferences
 
-> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
-> Please check back in a future Beta release for the complete guide. Thank you for your patience!
+The Preferences section covers all configurable options that control how the Google Pollen Forecaster operates. It explains each setting, from API key entry and location selection to polling schedules, blockout periods, and species-level data, helping you tailor the driver to your environment and ensure reliable, accurate pollen forecasts.
 
 #### 🔑 Google Pollen API Key
 
@@ -218,12 +230,151 @@ When the toggle is **On**, the following two fields become visible for user inpu
 * **Polling Resumption:** If the toggle is switched **Off** while a blockout is active, the driver will immediately use the Hub's scheduler to resume normal polling operations on the next scheduled time.
 * **Quota Savings:** This feature is highly recommended for reducing API consumption when you know the monitored pollen are not relevant in your area (e.g., winter months).
 
+#### 🔄 Auto-Reset Errors at Midnight
+
+> **Description:** A toggle that, when enabled, automatically resets certain temporary error states and daily counters at the start of each new day (midnight, based on your Hubitat Hub's timezone).
+
+##### 🎯 Purpose and Use
+This setting is designed to ensure a **clean slate** for the driver every 24 hours. This is especially useful for:
+* **Troubleshooting:** If the driver hits a temporary API error or exceeds the **Max API Calls Per Day** limit, this toggle ensures those status messages are cleared automatically at midnight.
+* **Data Hygiene:** It prevents error states related to daily limits or transient issues from persisting into the next day, ensuring that the **`apiStatus`** attribute accurately reflects the current day's operational state.
+
+##### 📌 Options and Values
+| Field Type | Value Range | Default Value |
+| :--- | :--- | :--- |
+| **Toggle Switch** | On / Off | (Usually **Off** for initial stability; users should set this to **On**.) |
+
+##### 💡 Hints and Best Practices
+* **Recommended Setting:** It is highly recommended to set this toggle to **On**. This guarantees that daily-based constraints (like the API call limit) and transient error messages are refreshed, preventing them from interfering with the next day's scheduled polling.
+* **Daily Reset:** The daily API call counter will reset regardless of this setting, but enabling this toggle ensures that the corresponding device attributes (`apiStatus`) are also cleared, allowing the driver to look operational at the start of the day.
+* **Testing:** When testing the **Max API Calls Per Day** feature, keeping this toggle **On** allows you to reliably test the limit failure and then automatically reset for the next day's trial.
+
+#### 🛡️ Advanced API Retry Settings
+
+> **Description:** A set of advanced preferences that configure the driver's built-in error handling mechanism. This feature enables the driver to automatically retry API calls when a temporary connection or timeout failure occurs, using an **Exponential Backoff** strategy.
+
+##### 🎯 Purpose and Use
+These settings are generally only necessary for users who experience frequent, intermittent polling failures due to poor network stability, hub resource saturation, or transient API server load. **For most users, leaving the defaults will provide sufficient reliability.**
+
+##### 📌 Options and Values (Grouped)
+| Field Type | Value Range | Default Value | Description |
+| :--- | :--- | :--- | :--- |
+| **Toggle** | On / Off | Off | **Enable Advanced Retries:** Activates the retry logic. When set to **Off**, the driver reverts to its default, stable retry behavior, and the values below are ignored. |
+| **Number** | 1 to 10 | 3 | **Max API Retry Attempts:** Maximum number of times the driver will attempt to re-send the API request before logging a final failure. |
+| **Number (seconds)** | 1 to 60 | 5 | **Max Backoff Delay (seconds):** The largest time delay (in seconds) the driver will wait between retry attempts. |
+
+* **Dependency Logic:** If the **Enable Advanced Retries** toggle is set to **Off**, the driver uses its default, stable retry logic. The values entered in **Max API Retry Attempts** and **Max Backoff Delay (seconds)** are preserved in the settings but are **not used** until the feature is re-enabled.
+
+##### 💡 Hints and Best Practices
+* **Use Case:** Only enable **Advanced Retries** if you are actively experiencing issues where the driver logs repeated connection errors or timeouts when trying to contact the Google API.
+* **Default Sufficiency:** The driver's default behavior is designed for high reliability. If you do enable retries, the default attempts (3) and maximum backoff (5 seconds) are usually more than sufficient.
+* **Exponential Backoff:** The driver uses an exponential backoff strategy, meaning the time delay between retries increases with each failed attempt (up to the defined **Max Backoff Delay**) to avoid overwhelming the API server.
+
+#### 🌱 Pollen Type Group Selection
+
+> **Description:** These three toggles control which specific metrics (Index, Level, or Health Tips) are reported for the various available pollen types (e.g., Alder, Birch, Grass). Enabling a toggle reveals a dynamic selection list below it, allowing the user to choose which specific pollen types to track.
+
+##### 🎯 Purpose and Use
+By default, the driver only reports high-level summary indices (`totalPollenIndex`, `treePollenIndex`, etc.). This group of preferences allows users to **filter and publish granular, individual plant data** as Current States, which is essential for users creating targeted automations or dashboard displays based on specific plant allergies.
+
+##### 📌 Options and Values (Grouped)
+| Preference Field | Field Type | Default Value | Description |
+| :--- | :--- | :--- | :--- |
+| **Show Index by Pollen Type** | Toggle | Off | Reports the numerical index value for selected plant types (e.g., `birchPollenIndex: 5`). |
+| **Show Level by Pollen Type** | Toggle | Off | Reports the categorical level (e.g., Low, Moderate) for selected plant types (e.g., `birchPollenLevel: Moderate`). |
+| **Show Health Tips by Pollen Type** | Toggle | Off | Reports the specific health recommendation for selected plant types (e.g., `birchHealthTip: Limit Outdoor Activity`). |
+
+##### 💡 Hints and Best Practices
+* **Dynamic Fields:** When you toggle **On** any of the "Show..." preferences, a new conditional field will appear immediately below it, titled "Select Pollen Types to Track".
+* **Conditional Visibility:** If one Pollen Group (e.g., **Show Index**) is already **On** and exposing the plant type selection list, turning **On** another group (e.g., **Show Level**) will **not** expose a redundant selection list. The original list is used to determine which plants are tracked across *all* enabled metrics.
+* **Current State Output Example:**
+    * If you enable **Show Index by Pollen Type** and select **Birch**, the driver will publish a Current State like: `birchPollenIndex: 5`
+    * If you also enable **Show Level by Pollen Type** and keep **Birch** selected, the driver will publish an additional state: `birchPollenLevel: Moderate`
+* **Data Persistence and Removal:** Once a Current State is published (e.g., `birchPollenIndex`), it will remain on the device page. If you later **toggle Off** the corresponding group (e.g., **Show Index by Pollen Type**) or **de-select a plant type**, the driver will update the relevant Current State with a value like **`Inactive`** or **`Disabled`** to signal that the data is no longer being actively polled or displayed.
+* **Saving Changes:** Remember that after changing the toggles or the plant type selections, you must click **Save Preferences** for the changes to take effect and for the driver to fetch the new data types on the next poll.
+
+#### 🧬 Individual Pollen Species (Granular Data)
+
+> **Description:** This section explains the nature of the specific plant data (e.g., Ragweed, Alder, Juniper) that becomes available for tracking when you enable one of the **🌱 Pollen Type Group Selection** toggles.
+
+##### 🎯 Purpose and Use
+Most public weather forecasts only provide a broad category (Tree, Grass, or Weed). This driver exposes the underlying, **granular data** from the Google API, which is essential for users with specific, diagnosed allergies.
+* **Targeted Automation:** Instead of reacting to a high 'Tree' index (which could be anything), you can create specific rules, such as "If **Ragweed** pollen index is above 5, turn on the air purifier."
+* **Precision Tracking:** Allows users to track species that are prevalent in their specific geographical area but may not be included in generic, national-level forecasts.
+
+##### 📌 Granular Data Naming Convention
+When you select a species in the preferences, the driver creates up to three corresponding Current States on your device page using a standardized naming structure:
+
+| Data Type | Example Species | Resulting Attribute Name | Example Value |
+| :--- | :--- | :--- | :--- |
+| **Index** | `ragweed` | `ragweedPollenIndex` | `12` |
+| **Level** | `alder` | `alderPollenLevel` | `Moderate` |
+| **Health Tip** | `oak` | `oakHealthTip` | `Limit Outdoor Activity` |
+
+##### 💡 Hints and Best Practices
+* **Relevance is Key:** The list of available individual species is determined entirely by the Google API based on the **Geographic Location** you have set in your preferences. If a species is not relevant to your coordinates, the API will not provide data for it.
+* **Enable Only What You Need:** Only select the specific species that you or members of your household are allergic to. This keeps your device Current States list clean and focused on actionable data.
+* **Index vs. Level:** Remember to use the **Index** (number) for precision in rules and the **Level** (word) for user-friendly notifications and dashboards.
+
+---
+
+## 🏷️ Current States (Device Attributes)
+
+**Description:**  
+This section details all the data attributes (Current States) that the Google Pollen Forecaster driver reports to Hubitat. These values are updated after every successful poll and are the core data points used for dashboard tiles, rules, and custom automations.
+
+### 🔬 Summary Pollen Data
+
+These attributes represent the overall forecast for the three main biological categories (Tree, Grass, Weed) and the combined total. These are reported regardless of the 🌱 *Pollen Type Group Selection* preferences.
+
+| **Attribute Name**   | **Data Type** | **Value Range**       | **Description** |
+|----------------------|---------------|------------------------|-----------------|
+| `totalPollenIndex`   | Number        | 0 – 100+               | The combined numerical score of all pollen types in the forecast. |
+| `totalPollenLevel`   | String        | Low, Moderate, High…   | The categorical severity of the combined total pollen index. |
+| `treePollenIndex`    | Number        | 0 – 100+               | The numerical score for all tree pollen types. |
+| `treePollenLevel`    | String        | Low, Moderate, High…   | The categorical severity of the tree pollen index. |
+| `grassPollenIndex`   | Number        | 0 – 100+               | The numerical score for all grass pollen types. |
+| `grassPollenLevel`   | String        | Low, Moderate, High…   | The categorical severity of the grass pollen index. |
+| `weedPollenIndex`    | Number        | 0 – 100+               | The numerical score for all weed pollen types. |
+| `weedPollenLevel`    | String        | Low, Moderate, High…   | The categorical severity of the weed pollen index. |
+
+### 📊 Driver Status and Metadata
+
+These attributes provide essential information regarding the driver's operation, scheduling, and API usage.
+
+| **Attribute Name**    | **Data Type** | **Value Range**                     | **Description** |
+|-----------------------|---------------|--------------------------------------|-----------------|
+| `driverVersion`       | String        | e.g., `2.5.37 - Alpha`               | The current version of the Groovy driver code. |
+| `apiStatus`           | String        | OK, Error, Blockout, Limit Reached   | The last reported operational status of the driver's API interaction. |
+| `lastPoll`            | String        | Custom Date/Time                     | The exact date and time of the last successful data retrieval. |
+| `nextPoll`            | String        | Custom Date/Time                     | The scheduled date and time for the next automatic poll attempt. |
+| `dailyApiCallCount`   | Number        | 0 to Max API Calls                   | The number of API calls made since the last midnight reset. |
+| `latitude`            | String        | Decimal Number                       | The latitude used for the API request (Hub or Custom Coordinates). |
+| `longitude`           | String        | Decimal Number                       | The longitude used for the API request (Hub or Custom Coordinates). |
+| `locationName`        | String        | User-defined label                   | The friendly name assigned to the current location. |
+
+### 🌿 Granular Pollen Data (Conditional)
+
+These attributes are only published if you enable the corresponding toggles in the 🌱 *Pollen Type Group Selection* preferences. The attributes reported will depend entirely on which specific species (e.g., *ragweed*, *birch*) you have selected.
+
+| **Attribute Name Pattern**   | **Data Type**        | **Value Range**                | **Description** |
+|------------------------------|-----------------------|--------------------------------|-----------------|
+| `[species]PollenIndex`       | Number / String       | 0 – 100+ / Inactive            | The numerical index for a specific species (e.g., `birchPollenIndex`). |
+| `[species]PollenLevel`       | String                | Low, Moderate, High, Inactive  | The categorical level for that species (e.g., `ragweedPollenLevel`). |
+| `[species]HealthTip`         | String                | Text / Inactive                | The health recommendation for that species (e.g., `oakHealthTip`). |
+
+**Inactive State:**  
+If a species attribute was previously reported but is now deselected, its value will change to **Inactive** or **Disabled** to indicate it is no longer being tracked.
+
 ---
 
 ## 📝 Summary
 
-> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
-> Please check back in a future Beta release for the complete guide. Thank you for your patience!
+This document gives you a clear, step-by-step guide to installing, setting up, and configuring the **Google Pollen Forecaster** driver on Hubitat. It covers adding the driver, entering your API key, choosing location options, and adjusting features like polling schedules, blockout periods, quota protection, and species-level data.
+
+You’ll learn how the polling system works, how status updates are reported, and how to use the device attributes in dashboards and automations. The guide also includes troubleshooting tips, best practices, and a full reference of all settings and reported data.
+
+Together, these sections provide everything needed to install the driver confidently and tailor it to your environment.
 
 ---
 
@@ -255,6 +406,7 @@ When the toggle is **On**, the following two fields become visible for user inpu
 ---
 
 ## 📜 Revision History
-| Version | Date       | Author | Changes           |
-|---------|------------|--------|-------------------|
-| 0.1     | 2025-12-08 | DBQ    | Draft of Document |
+| Version | Date       | Author | Changes                                    |
+|---------|------------|--------|--------------------------------------------|
+| 0.11    | 2025-12-10 | DBQ    | Concept Changes, Formating, adding content |
+| 0.1     | 2025-12-08 | DBQ    | Draft of Document                          |
