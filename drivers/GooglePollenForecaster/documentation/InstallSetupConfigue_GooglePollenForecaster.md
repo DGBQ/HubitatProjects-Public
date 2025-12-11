@@ -2,7 +2,7 @@
 ### _Driver for Hubitat_
 
 ## 🔢 Version
-**Document Version:** 0.11 (Draft)
+**Document Version:** 0.13 (Draft)
 **Date:** 2025-12-10  
 **Managing Author:** David Ball-Quenneville  
 **Associate Author:** ChatGPT and Gemini
@@ -28,6 +28,7 @@
     - 🛡️ [Advanced API Retry Settings](#-advanced-api-retry-settings)
     - 🌱 [Pollen Type Group Selection](#-pollen-type-group-selection)
     - 🧬[Individual Pollen Species (Granular Data)](#-individual-pollen-species-granular-data)
+    - 📝 [Logging and Debugging Controls](#-logging-and-debugging-controls)
 - 🏷️ [Current States (Device Attributes)](#-current-states-device-attributes)
     - 🔬 [Summary Pollen Data](#-summary-pollen-data)
     - 📊[Driver Status and Metadata](#-driver-status-and-metadata)
@@ -285,17 +286,17 @@ By default, the driver only reports high-level summary indices (`totalPollenInde
 | **Show Health Tips by Pollen Type** | Toggle | Off | Reports the specific health recommendation for selected plant types (e.g., `birchHealthTip: Limit Outdoor Activity`). |
 
 ##### 💡 Hints and Best Practices
-* **Dynamic Fields:** When you toggle **On** any of the "Show..." preferences, a new conditional field will appear immediately below it, titled "Select Pollen Types to Track".
-* **Conditional Visibility:** If one Pollen Group (e.g., **Show Index**) is already **On** and exposing the plant type selection list, turning **On** another group (e.g., **Show Level**) will **not** expose a redundant selection list. The original list is used to determine which plants are tracked across *all* enabled metrics.
+* **Dynamic Pollen Species:** When you toggle **On** any of the "Show..." preferences, a group  of Pollen Species Toggles list will appear below the Show Toggles, with each species listed. 
+* **Conditional Visibility:** If one Pollen Group (e.g., **Show Index**) is already **On** and exposing the species type selection list toggles, turning **On** another group (e.g., **Show Level**) will **not** expose a redundant selection list. The original list is used to determine which plants are tracked across *all* enabled metrics.
 * **Current State Output Example:**
     * If you enable **Show Index by Pollen Type** and select **Birch**, the driver will publish a Current State like: `birchPollenIndex: 5`
     * If you also enable **Show Level by Pollen Type** and keep **Birch** selected, the driver will publish an additional state: `birchPollenLevel: Moderate`
-* **Data Persistence and Removal:** Once a Current State is published (e.g., `birchPollenIndex`), it will remain on the device page. If you later **toggle Off** the corresponding group (e.g., **Show Index by Pollen Type**) or **de-select a plant type**, the driver will update the relevant Current State with a value like **`Inactive`** or **`Disabled`** to signal that the data is no longer being actively polled or displayed.
+* **Data Persistence and Removal:** Once a Current State is published (e.g., `birchPollenIndex`), it will remain on the device page. If you later **toggle Off** the corresponding group (e.g., **Show Index by Pollen Type**) or **de-select a species type**, the driver will update the relevant Current State with a value like `Disabled`** to signal that the data is no longer being actively polled or displayed. **Crucially, the original Current State Name (for example: `birchPollenIndex`) itself cannot be permanently removed from the driver without fully deleting and reinstalling the driver, which is a constraint of the Hubitat platform.**
 * **Saving Changes:** Remember that after changing the toggles or the plant type selections, you must click **Save Preferences** for the changes to take effect and for the driver to fetch the new data types on the next poll.
 
 #### 🧬 Individual Pollen Species (Granular Data)
 
-> **Description:** This section explains the nature of the specific plant data (e.g., Ragweed, Alder, Juniper) that becomes available for tracking when you enable one of the **🌱 Pollen Type Group Selection** toggles.
+> **Description:** This section explains the nature of the specific species or plant data (e.g., Ragweed, Alder, Juniper) that becomes available for tracking when you enable one of the **🌱 Pollen Type Group Selection** toggles.
 
 ##### 🎯 Purpose and Use
 Most public weather forecasts only provide a broad category (Tree, Grass, or Weed). This driver exposes the underlying, **granular data** from the Google API, which is essential for users with specific, diagnosed allergies.
@@ -315,13 +316,31 @@ When you select a species in the preferences, the driver creates up to three cor
 * **Relevance is Key:** The list of available individual species is determined entirely by the Google API based on the **Geographic Location** you have set in your preferences. If a species is not relevant to your coordinates, the API will not provide data for it.
 * **Enable Only What You Need:** Only select the specific species that you or members of your household are allergic to. This keeps your device Current States list clean and focused on actionable data.
 * **Index vs. Level:** Remember to use the **Index** (number) for precision in rules and the **Level** (word) for user-friendly notifications and dashboards.
+* **Species Toggle Behavior (Persistence Warning):** If you switch a single species toggle (e.g., 'Oak') from **On** to **Off**, the driver will update all related Current States (e.g., `oakPollenIndex`) to the value **`Disabled`**. However, the original Current State name, such as `oakPollenIndex`, will remain permanently listed on the device due to a constraint of the Hubitat platform; it can only be removed by fully deleting and reinstalling the driver.
+
+---
+
+#### 📝 Logging and Debugging Controls
+
+###### Description
+These controls manage the volume of operational and troubleshooting messages output by the driver to the Hubitat log panel. They are crucial for monitoring the driver's health and diagnosing issues without overwhelming the system logs during normal operation.
+
+| Field Type | Value Range                 | Default Value | Description |
+|------------|----------------------------|---------------|-------------|
+| Dropdown   | OFF, ERROR, WARN, INFO, DEBUG | INFO          | **Log Verbosity:** Determines the detail level of logging. INFO is the recommended setting for daily use, providing essential information like successful polls and calculated next update times. Switch to DEBUG only for in-depth troubleshooting, as it logs raw API responses and internal function calls. |
+| Toggle     | On / Off                    | On            | **Auto-Revert Debug Logging:** This feature automatically reverts the Log Verbosity setting from DEBUG back to the previously selected level (usually INFO) after a period of 30 minutes from the last successful polling event. This prevents excessive log spam after a debugging session is completed. |
+
+##### 💡 Hints and Best Practices
+
+- **Troubleshooting:** Only switch Log Verbosity to DEBUG when you are actively investigating a problem (e.g., API errors, scheduling issues).  
+- **Self-Cleaning:** Leaving Auto-Revert Debug Logging set to On ensures the log verbosity returns to a stable, non-chatty level, maintaining optimal Hubitat performance and readability.
 
 ---
 
 ## 🏷️ Current States (Device Attributes)
 
 **Description:**  
-This section details all the data attributes (Current States) that the Google Pollen Forecaster driver reports to Hubitat. These values are updated after every successful poll and are the core data points used for dashboard tiles, rules, and custom automations.
+This section some of the important data attributes (Current States and State Variables) that the Google Pollen Forecaster driver reports to Hubitat. These values are updated after every successful poll and are the core data points used for dashboard tiles, rules, and custom automations.
 
 ### 🔬 Summary Pollen Data
 
@@ -406,8 +425,9 @@ Together, these sections provide everything needed to install the driver confide
 ---
 
 ## 📜 Revision History
-| Version | Date       | Author | Changes                                    |
-|---------|------------|--------|--------------------------------------------|
-| 0.12    | 2025-12-10 | DBQ    | Fix ToC links, Formating, Content updates  |
-| 0.11    | 2025-12-10 | DBQ    | Concept Changes, Formating, adding content |
-| 0.1     | 2025-12-08 | DBQ    | Draft of Document                          |
+| Version | Date       | Author | Changes                                       |
+|---------|------------|--------|-----------------------------------------------|
+| 0.13    | 1025-12-11 | DBQ    | Still trying to fix ToC link, Content updates |
+| 0.12    | 2025-12-10 | DBQ    | Fix ToC links, Formating, Content updates     |
+| 0.11    | 2025-12-10 | DBQ    | Concept Changes, Formating, adding content    |
+| 0.1     | 2025-12-08 | DBQ    | Draft of Document                             |
