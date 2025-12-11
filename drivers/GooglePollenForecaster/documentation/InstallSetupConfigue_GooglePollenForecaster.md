@@ -11,13 +11,13 @@
 <details>
 <summary>Click to expand Table of Contents</summary>
 
-- 🧭 [Overview](#overview)
-- ⬇️ [Installation](#installation)
-- 🛠️ [Setup](#setup)
-- ⚖️ [Configuration](#configuration)
-  - ➡️ [Commands](#commands)
-    - 🧮 [Poll](#polling-button)
-  - 🎛️ [Preferences](#preferences)
+- 🧭 [Overview](#-overview)
+- ⬇️ [Installation](#-installation)
+- 🛠️ [Setup](#-setup)
+- ⚖️ [Configuration](#-configuration)
+  - ➡️ [Commands](#-commands)
+    - 🧮 [Poll](#-polling-button)
+  - 🎛️ [Preferences](#-preferences)
     - 🔑 [Google Pollen API Key](#google-pollen-api-key)
     - ⏰ [Primary Daily Poll](#primary-daily-poll)
     - ⏰ [Secondary Daily Poll](#secondary-daily-poll)
@@ -188,7 +188,7 @@ This setting is essential for proactive cost and quota management. It is designe
 > **Description:** A toggle that determines the source of the geographical coordinates used for fetching the pollen forecast. When **Off**, the driver uses the location data pre-configured in your Hubitat Hub settings. When **On**, it allows for the entry of custom latitude and longitude values. **If switched Off, the coordinates immediately revert to the Hub's saved location data and will be used on the next scheduled poll or manual polling.**
 
 ##### 🎯 Purpose and Use
-This setting is essential when the Hubitat Hub's physical location (Latitude and Longitude) is incorrect, or if you wish to monitor pollen data for a different location. It gives the user the ability to switch back and forth between the custom location and the Hub's default location with a single action.
+This setting is essential using the Hubitat Hub's physical location (Latitude and Longitude) as defined in your settings. It can be used for example if you wish to monitor pollen data for a different location. This gives the user the ability to switch back and forth between the custom location and the Hub's default location with a single action.
 
 ##### 📌 Options and Values
 | Field Type | Value Range | Default Value |
@@ -198,8 +198,8 @@ This setting is essential when the Hubitat Hub's physical location (Latitude and
 When the toggle is **On**, the following three fields become visible for user input:
 
 * **Location Name (Text Input):** A reference field for the user to label the custom location (e.g., "The Cottage," "Vacation Home," "Work"). *This field is optional and not required by the API.*
-* **Custom Latitude (Decimal Input):** The north-south position of the custom location.
-* **Custom Longitude (Decimal Input):** The east-west position of the custom location.
+* **Custom Latitude (Decimal Input):** The north-south position of the custom location. *This field is NOT optional and IS required by the API.*
+* **Custom Longitude (Decimal Input):** The east-west position of the custom location. *This field is NOT optional and IS required by the API.*
 
 ##### 💡 Hints and Best Practices
 * **Mandatory Refresh:** After changing this toggle's state or entering new coordinates, you **must close and reopen the device driver page** in the Hubitat interface to display or hide the custom coordinate fields correctly.
@@ -226,8 +226,8 @@ When the toggle is **On**, the following two fields become visible for user inpu
 
 ##### 💡 Hints and Best Practices
 * **Mandatory Refresh:** After changing this toggle's state or setting the dates, you **must close and reopen the device driver page** in the Hubitat interface to display or hide the date picker fields correctly.
-* **Annual Roll-Forward:** This is an automated convenience feature. Once the driver successfully exits an active blockout period, it will automatically calculate and set the new **Blockout Start Date** and **Blockout End Date** one year into the future. This prepares the driver for the next off-season without further manual intervention.
-* **Polling Resumption:** If the toggle is switched **Off** while a blockout is active, the driver will immediately use the Hub's scheduler to resume normal polling operations on the next scheduled time.
+* **Annual Roll-Forward:** This is an automated convenience feature. Once the driver successfully exits an active blockout period, it will automatically calculate and set the new **Blockout Start Date** and **Blockout End Date** one year into the future. This prepares the driver for the next off-season without further manual intervention.**NOTE:** The roll-forward mechanism does not account for leap years. To ensure successful annual rollover, the blockout date of February 29th should not be used.
+* **Polling Resumption:** If the toggle is switched **Off** while a blockout is active, the driver will immediately use the Hub's scheduler to resume normal polling operations on the next scheduled time. **Important:** If you later switch the blockout toggle back **On**, you will need to manually reset the **Blockout Start Date** and **Blockout End Date** to re-engage the seasonal schedule correctly.
 * **Quota Savings:** This feature is highly recommended for reducing API consumption when you know the monitored pollen are not relevant in your area (e.g., winter months).
 
 #### 🔄 Auto-Reset Errors at Midnight
@@ -245,7 +245,7 @@ This setting is designed to ensure a **clean slate** for the driver every 24 hou
 | **Toggle Switch** | On / Off | (Usually **Off** for initial stability; users should set this to **On**.) |
 
 ##### 💡 Hints and Best Practices
-* **Recommended Setting:** It is highly recommended to set this toggle to **On**. This guarantees that daily-based constraints (like the API call limit) and transient error messages are refreshed, preventing them from interfering with the next day's scheduled polling.
+* **Recommended Setting:** It is highly recommended to set this toggle to **On**. This ensures that daily-based constraints (like the API call limit) and transient error messages are refreshed, preventing them from interfering with the next day's scheduled polling.
 * **Daily Reset:** The daily API call counter will reset regardless of this setting, but enabling this toggle ensures that the corresponding device attributes (`apiStatus`) are also cleared, allowing the driver to look operational at the start of the day.
 * **Testing:** When testing the **Max API Calls Per Day** feature, keeping this toggle **On** allows you to reliably test the limit failure and then automatically reset for the next day's trial.
 
