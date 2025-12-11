@@ -18,24 +18,24 @@
   - ➡️ [Commands](#-commands)
     - 🧮 [Poll](#-polling-button)
   - 🎛️ [Preferences](#-preferences)
-    - 🔑 [Google Pollen API Key](#google-pollen-api-key)
-    - ⏰ [Primary Daily Poll](#primary-daily-poll)
-    - ⏰ [Secondary Daily Poll](#secondary-daily-poll)
-    - 🛑 [Max API Calls Per Day](#max-api-calls-per-day)
-    - 🗺️ [Use Custom Coordinates](#use-custom-coordinates)
-    - 🚫 [Use Blockout Dates?](#use-blockout-dates)
-    - 🔄 [Auto-Reset Errors at Midnight](#auto-reset-errors-at-midnight)
-    - 🛡️ [Advanced API Retry Settings](#advanced-api-retry-settings)
-    - 🌱 [Pollen Type Group Selection](#pollen-type-group-selection)
-    - 🧬[Individual Pollen Species (Granular Data)](#individual-pollen-species-granular-data)
-- 🏷️ [Current States (Device Attributes)](#current-states-device-attributes)
-    - 🔬 [Summary Pollen Data](#summary-pollen-data)
-    - 📊[Driver Status and Metadata](#driver-status-and-metadata)
-    - 🌿 [Granular Pollen Data (Conditional)](#granular-pollen-data-conditional)    
-- 📝 [Summary](#summary)
-- 🛡️ [Disclaimers](#disclaimers)
-- 🔗 [Reference / External Links](#reference--external-links)
-- 📜 [Revision History](#revision-history)
+    - 🔑 [Google Pollen API Key](#-google-pollen-api-key)
+    - ⏰ [Primary Daily Poll](#-primary-daily-poll)
+    - ⏰ [Secondary Daily Poll](#-secondary-daily-poll)
+    - 🛑 [Max API Calls Per Day](#-max-api-calls-per-day)
+    - 🗺️ [Use Custom Coordinates](#-use-custom-coordinates)
+    - 🚫 [Use Blockout Dates?](#-use-blockout-dates)
+    - 🔄 [Auto-Reset Errors at Midnight](#-auto-reset-errors-at-midnight)
+    - 🛡️ [Advanced API Retry Settings](#-advanced-api-retry-settings)
+    - 🌱 [Pollen Type Group Selection](#-pollen-type-group-selection)
+    - 🧬[Individual Pollen Species (Granular Data)](#-individual-pollen-species-granular-data)
+- 🏷️ [Current States (Device Attributes)](#-current-states-device-attributes)
+    - 🔬 [Summary Pollen Data](#-summary-pollen-data)
+    - 📊[Driver Status and Metadata](#-driver-status-and-metadata)
+    - 🌿 [Granular Pollen Data (Conditional)](#-granular-pollen-data-conditional)    
+- 📝 [Summary](#-summary)
+- 🛡️ [Disclaimers](#-disclaimers)
+- 🔗 [Reference / External Links](#-reference--external-links)
+- 📜 [Revision History](#-revision-history)
 
 </details>
 
@@ -408,5 +408,6 @@ Together, these sections provide everything needed to install the driver confide
 ## 📜 Revision History
 | Version | Date       | Author | Changes                                    |
 |---------|------------|--------|--------------------------------------------|
+| 0.12    | 2025-12-10 | DBQ    | Fix ToC links, Formating, Content updates  |
 | 0.11    | 2025-12-10 | DBQ    | Concept Changes, Formating, adding content |
 | 0.1     | 2025-12-08 | DBQ    | Draft of Document                          |
