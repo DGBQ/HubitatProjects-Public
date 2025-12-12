@@ -12,7 +12,11 @@
 <summary>Click to expand Table of Contents</summary>
 
 - 🧭 [Overview](#-overview)
+<<<<<<< HEAD
 - ⬇️[Installation](#%EF%B8%8F-installation)
+=======
+- ⬇️[Installation](#-installation)
+>>>>>>> ab1cf1af62ab7cf3196c63ab15e1558800081d6c
 - 🛠️ [Setup](#-setup)
 - ⚖️ [Configuration](#-configuration)
   - ➡️ [Commands](#-commands)
