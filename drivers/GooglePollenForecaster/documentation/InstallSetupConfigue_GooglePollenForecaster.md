@@ -12,9 +12,6 @@
 <summary>Click to expand Table of Contents</summary>
 
 - 🧭 [Overview](#-overview)
-<<<<<<< HEAD
-- ⬇️[Installation](#%EF%B8%8F-installation)
-=======
 - ⬇️[Installation](#%EF%B8%8F-installation)
 - 🛠️ [Setup](#-setup)
 - ⚖️ [Configuration](#-configuration)
