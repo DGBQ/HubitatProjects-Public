@@ -12,8 +12,8 @@
 <summary>Click to expand Table of Contents</summary>
 
 - 🧭 [Overview](#-overview)
-- ⬇️ [Installation](#--installation)
-- 🛠️ [Setup](#--setup)
+- ⬇️ [Installation](#-installation)
+- 🛠️ [Setup](#-setup)
 - ⚖️ [Configuration](#-configuration)
   - ➡️ [Commands](#-commands)
     - 🧮 [Poll](#-polling-button)
