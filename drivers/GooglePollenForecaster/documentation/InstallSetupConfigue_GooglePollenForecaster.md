@@ -13,7 +13,7 @@
 
 - 🧭 [Overview](#-overview)
 - ⬇️[Installation](#%EF%B8%8F-installation)
-- 🛠️ [Setup](#-setup)
+- 🛠️ [Setup](#setup)
 - ⚖️ [Configuration](#-configuration)
   - ➡️ [Commands](#-commands)
     - 🧮 [Poll](#-polling-button)
@@ -62,7 +62,7 @@ By the end, you’ll understand how the driver operates, how data is retrieved a
 
 ---
 
-## 🛠️ Setup
+<h2 id="setup">🛠️ Setup\</h2>
 
 Getting started with the driver is simple: just enter your **Google Pollen API key** and save the change, and the driver will begin retrieving data using its default settings. While it works out-of-the-box with minimal setup, reviewing the [**Configuration**](#configurationsection) section is recommended to unlock its full potential—fine-tune polling schedules, enable species-level tracking, manage blockout periods, and adjust other settings for more accurate and reliable pollen forecasts.
 
