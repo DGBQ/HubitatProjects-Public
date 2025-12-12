@@ -12,7 +12,7 @@
 <summary>Click to expand Table of Contents</summary>
 
 - 🧭 [Overview](#-overview)
-- ⬇️[Installation](-#installation)
+- ⬇️[Installation](#-installation)
 - 🛠️ [Setup](#-setup)
 - ⚖️ [Configuration](#-configuration)
   - ➡️ [Commands](#-commands)
