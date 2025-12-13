@@ -11,38 +11,38 @@
 <details>
 <summary>Click to expand Table of Contents</summary>
 
-- 🧭 [Overview](#-overview)
-- ⬇️[Installation](#%EF%B8%8F-installation)
+- 🧭 [Overview](#overview)
+- ⬇️[Installation](#installation)
 - 🛠️ [Setup](#setup)
-- ⚖️ [Configuration](#-configuration)
-  - ➡️ [Commands](#-commands)
-    - 🧮 [Poll](#-polling-button)
-  - 🎛️ [Preferences](#-preferences)
-    - 🔑 [Google Pollen API Key](#-google-pollen-api-key)
-    - ⏰ [Primary Daily Poll](#-primary-daily-poll)
-    - ⏰ [Secondary Daily Poll](#-secondary-daily-poll)
-    - 🛑 [Max API Calls Per Day](#-max-api-calls-per-day)
-    - 🗺️ [Use Custom Coordinates](#-use-custom-coordinates)
-    - 🚫 [Use Blockout Dates?](#-use-blockout-dates)
-    - 🔄 [Auto-Reset Errors at Midnight](#-auto-reset-errors-at-midnight)
-    - 🛡️ [Advanced API Retry Settings](#-advanced-api-retry-settings)
-    - 🌱 [Pollen Type Group Selection](#-pollen-type-group-selection)
-    - 🧬[Individual Pollen Species (Granular Data)](#-individual-pollen-species-granular-data)
+- ⚖️ [Configuration](#configuration)
+  - ➡️ [Commands](#commands)
+    - 🧮 [Poll](#polling-button)
+  - 🎛️ [Preferences](#preferences)
+    - 🔑 [Google Pollen API Key](#google-pollen-api-key)
+    - ⏰ [Primary Daily Poll](#primary-daily-poll)
+    - ⏰ [Secondary Daily Poll](#secondary-daily-poll)
+    - 🛑 [Max API Calls Per Day](#max-api-calls-per-day)
+    - 🗺️ [Use Custom Coordinates](#use-custom-coordinates)
+    - 🚫 [Use Blockout Dates?](#use-blockout-dates)
+    - 🔄 [Auto-Reset Errors at Midnight](#auto-reset-errors-at-midnight)
+    - 🛡️ [Advanced API Retry Settings](#advanced-api-retry-settings)
+    - 🌱 [Pollen Type Group Selection](#pollen-type-group-selection)
+    - 🧬[Individual Pollen Species (Granular Data)](#individual-pollen-species-granular-data)
     - 📝 [Logging and Debugging Controls](#-logging-and-debugging-controls)
-- 🏷️ [Current States (Device Attributes)](#-current-states-device-attributes)
-    - 🔬 [Summary Pollen Data](#-summary-pollen-data)
-    - 📊[Driver Status and Metadata](#-driver-status-and-metadata)
-    - 🌿 [Granular Pollen Data (Conditional)](#-granular-pollen-data-conditional)    
-- 📝 [Summary](#-summary)
-- 🛡️ [Disclaimers](#-disclaimers)
-- 🔗 [Reference / External Links](#-reference--external-links)
-- 📜 [Revision History](#-revision-history)
+- 🏷️ [Current States (Device Attributes)](#current-states-device-attributes)
+    - 🔬 [Summary Pollen Data](#summary-pollen-data)
+    - 📊[Driver Status and Metadata](#driver-status-and-metadata)
+    - 🌿 [Granular Pollen Data (Conditional)](#granular-pollen-data-conditional)    
+- 📝 [Summary](#summary)
+- 🛡️ [Disclaimers](#disclaimers)
+- 🔗 [Reference / External Links](#reference--external-links)
+- 📜 [Revision History](#revision-history)
 
 </details>
 
 ---
 
-## 🧭 Overview
+<h2 id="overview">🧭 Overview</h2>
 
 This document provides a complete walkthrough for installing, setting up, and configuring the **Google Pollen Forecaster** driver on Hubitat. It begins with the steps required to add the driver to your hub, enter your Google Pollen API key, and confirm the initial connection. From there, it guides you through all available configuration options, including location settings, polling schedules, blockout periods, quota protection controls, species-level data toggles, and troubleshooting tools.
 
@@ -55,7 +55,7 @@ By the end, you’ll understand how the driver operates, how data is retrieved a
 
 ---
 
-## ⬇️ Installation
+<h2 id="installation">⬇️ Installation</h2>
 
 > 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
 > Please check back in a future Beta release for the complete guide. Thank you for your patience!
