@@ -1,11 +1,10 @@
-# 🌿 Pollen Guide – Google Pollen Forecaster
+# 🌱 Pollen Guide – Google Pollen Forecaster
 ### _Driver for Hubitat_
 
 ## 🔢 Version
-**Document Version:** 1.0.1  
-**Date:** 2025-11-25  
-**Managing Author:** David Ball-Quenneville  
-**Associate Author:** ChatGPT  
+**Document Version:** 1.20  
+**Date:** 2025-12-15  
+**Author:** David Ball-Quenneville  
 
 ---
 
@@ -38,7 +37,8 @@
 
 ---
 
-## 🧭 Overview  
+<h2 id="overview">🧭 Overview</h2>
+
 The Google Pollen Forecaster Driver for Hubitat leverages the Google Pollen API to deliver hyper-local pollen forecasts, helping you manage allergies or enhance your smart home with health-focused automations (e.g., triggering rule or piston warnings when ragweed levels spike). 
 
 This document outlines the pollen types and specific plants supported by the API, their availability by country or region, and how this data is integrated within the Google Pollen Forecaster Driver. It also provides guidance on handling seasonal variations, off-season data, and region-specific availability to ensure your dashboards and automations remain accurate and meaningful. 
@@ -47,7 +47,8 @@ The driver translates API data into actionable Current States, enabling Hubitat 
 
 ---
 
-## 💡 Why It Matters  
+<h2 id="why-it-matters">💡 Why It Matters</h2>
+
 Understanding and using pollen data can help Hubitat users in three primary ways:  
 
 - **Allergy Management:** Track pollen levels for specific allergens such as ragweed or birch, allowing proactive steps like closing windows or using air purifiers before high pollen exposure.  
@@ -56,7 +57,8 @@ Understanding and using pollen data can help Hubitat users in three primary ways
 
 ---
 
-## 🧩 Google Pollen API  
+<h2 id="google-pollen-api">🧩 Google Pollen API</h2>
+
 The Google Pollen Forecaster Driver for Hubitat relies on the Google Pollen API to provide accurate, hyper-local pollen once-a-day forecasts. This API offers detailed information for multiple pollen types and specific plants, making it ideal for both allergy management and health-focused smart home automations.
 
 **Benefits for Hubitat Users**  
@@ -69,11 +71,12 @@ By leveraging this API, the driver allows users to:
 
 ---
 
-## 🌿 Available Pollen Types & Specific Plants
+<h2 id="available-pollen-types-specific-plants">🌿 Available Pollen Types & Specific Plants</h2>
 
 The Google Pollen API organizes pollen into broad categories called Pollen Types, each containing multiple Specific Plants. This hierarchy allows the driver to provide both high-level pollen trends and detailed plant-specific data, ensuring accurate monitoring and automation triggers.
 
-### ↔️ Type-to-Plant Relationship  
+<h3 id="type-to-plant-relationship">↔️ Type-to-Plant Relationship</h3>
+
 Each pollen type encompasses a collection of specific plants. The driver tracks both overall pollen trends for each type and individual plant pollen levels, enabling granular monitoring. This ensures automations respond to relevant allergen spikes while reducing irrelevant data clutter.
 
 | Pollen Type | Typical Season        | Specific Plants (All Supported)                                                                                             |
@@ -82,7 +85,8 @@ Each pollen type encompasses a collection of specific plants. The driver tracks 
 | Grass       | Late Spring → Summer  | Graminales                                                                                                                  |
 | Weeds       | Late Summer → Fall    | Mugwort, Ragweed                                                                                                            |
 
-### 🌾 Pollen Types  
+<h3 id="pollen-types">🌾 Pollen Types</h3>
+
 The API categorizes pollen into three primary types, which are available as driver attributes and form the foundation for calculating overall and dominant pollen levels:
 
 - **Trees:** Covers pollen from multiple tree species, typically active in spring to early summer.  
@@ -91,7 +95,8 @@ The API categorizes pollen into three primary types, which are available as driv
 
 🟡 **Note:** Not all pollen types are available in every country, and off-season data may be absent (e.g., tree pollen in winter).
 
-### 🌻 Specific Plants  
+<h3 id="specific-plants">🌻 Specific Plants</h3>
+
 For granular monitoring, the API provides data at the plant level. These plants can be enabled individually via Preferences → Pollen Type Display Settings. Attributes include numeric indices, qualitative levels, and health recommendations.
 
 **Currently Supported Plants include:**
@@ -99,7 +104,8 @@ Alder, Ash, Birch, Cottonwood, Cypress Pine, Elm, Graminales, Grass, Hazel, Japa
 
 ---
 
-## 🌍 Supported Regions  
+<h2 id="supported-regions">🌍 Supported Regions</h2>
+
 The driver provides pollen data for a wide range of countries and regions worldwide. While all regions support at least one of the main pollen types, availability of specific plants may vary.
 
 | Region         | Pollen Types           | Representative Plants                            |
@@ -115,7 +121,8 @@ The driver provides pollen data for a wide range of countries and regions worldw
 
 ---
 
-## ⚙️ Driver Features & Capabilities  
+<h2 id="driver-features-capabilities">⚙️ Driver Features & Capabilities</h2>
+
 The driver provides actionable Current States and integrations for Hubitat dashboards, Rule Machine, and WebCoRE automations.
 * **Master and Individual Pollen Toggles** – Control which pollen categories (Trees, Grass, Weeds) and specific types (e.g., Ragweed, Birch, Alder) are monitored. Only enabled attributes appear on your dashboard.
 * **Pollen Level & Index Tracking** – Provides numerical indices (1–5) and descriptive levels (“Low,” “Moderate,” “High”) for each active pollen type.
@@ -126,17 +133,20 @@ The driver provides actionable Current States and integrations for Hubitat dashb
 * **Customizable Display** – Users can choose which types to monitor and hide irrelevant data to reduce dashboard clutter.
 
 
-### 🔘 Master & Individual Pollen Toggles  
+<h3 id="master-individual-pollen-toggles">🔘 Master & Individual Pollen Toggles</h3>
+
 * Allows users to enable or disable entire pollen categories: **Trees, Grass, Weeds.**
 * Individual pollen types (e.g., Ragweed, Birch, Alder) can be toggled within each category.
 * Only enabled types create attributes in the system, keeping dashboards and automations clean.
 
 ---
 
-#### 📊 Status & Attributes  
+<h4 id="status-attributes">📊 Status & Attributes</h3>
+
 This subsection summarizes all pollen-related attributes and their behaviors under different conditions: normal API reporting, dormant (off-season), unavailable (regional/API limitation), and blockout periods. These tables help you understand what each attribute represents and how it behaves for automations, dashboards, or health monitoring.
 
-#### 📏Pollen Index Attributes
+<h4 id="pollen-index-attributes">📏Pollen Index Attributes</h3>
+
 The **Pollen Index Attributes** provide numeric values that indicate the severity of pollen for each type, helping track allergy levels throughout the season. Overall and Dominant indices summarize the highest active pollen levels, highlighting which type is currently most impactful.
 
 | **Attribute**           | **Type**     | **API Values**                   | **System States**                     | **Description**                                                       |
@@ -147,7 +157,8 @@ The **Pollen Index Attributes** provide numeric values that indicate the severit
 
 🟡**Note:** Dormant or unavailable types do not affect Overall or Dominant Pollen Index calculations.
 
-#### 🌡️ Pollen Level Attributes
+<h4 id="pollen-level-attributes">🌡️ Pollen Level Attributes</h3>
+
 The **Pollen Level Attributes** indicate the qualitative severity of pollen, ranging from None to Very High, for each type throughout the season. Overall and Individual levels summarize the highest active pollen levels and provide detailed insight for each plant type.
 
 | **Attribute**           | **Type**     | **API Values**                   | **System States**                     | **Description**                                                       |
@@ -158,7 +169,8 @@ The **Pollen Level Attributes** indicate the qualitative severity of pollen, ran
 
 🟡**Note:** Dormant or unavailable types are ignored in Overall calculations.
 
-#### 🩺 Health Recommendation Attributes
+<h4 id="health-recommendation-attributes">🩺 Health Recommendation Attributes</h3>
+
 The **Health Recommendation Attributes** provide precautionary guidance based on pollen levels, offering advice for general, overall, and individual plant types. Overall and Individual recommendations summarize or specify guidance for dominant and enabled pollen types, helping users manage allergy exposure.
 
 | **Attribute**           | **Type**     | **API Values**                   | **System States**                     | **Description**                                                       |
@@ -167,7 +179,8 @@ The **Health Recommendation Attributes** provide precautionary guidance based on
 | Overall Health Recommendation | Calculated   | From active types                 | N/A / Health Off / Suspended          | Summarizes guidance for dominant pollen type.                        |
 | Individual Health Recommendation | Dynamic     | API string                         | N/A / Health Off                      | Specific guidance for each enabled pollen type.                       |
 
-#### ⭐Overall & Dominant Pollen Attributes
+<h4 id="overall-dominant-pollen-attributes">⭐Overall & Dominant Pollen Attributes</h3>
+
 The **Overall & Dominant Pollen Attributes** summarize the highest pollen activity for the current day, highlighting overall severity across all types. The Dominant attribute identifies which pollen type is currently most prevalent, using a defined tie-breaking priority when levels are equal.
 
 | Attribute Type   | API Values  | System States              | Description                                                                                     |
@@ -175,7 +188,8 @@ The **Overall & Dominant Pollen Attributes** summarize the highest pollen activi
 | Overall Pollen  | Calculated | Dormant / N/A / Suspended | Displays the dominant pollen level across all types for the current day. Suspended during blockout periods. |
 | Dominant Pollen | Calculated | Dormant / N/A / Suspended | Identifies which pollen type is currently dominant. Tie-breaking: Grass → Trees → Weeds → Alphabetical. |
 
-#### 🕰️ Blockout & Seasonal Behavior
+<h4 id="blockout-seasonal-behavior">🕰️ Blockout & Seasonal Behavior</h3>
+
 When Use Blockout Dates is ON, all attributes are set to Suspended or placeholders to prevent stale data or unwanted automation triggers. Attributes automatically revert to normal once blockout ends and the next API poll occurs.
 
 | Attribute                         | Blockout State |
@@ -205,43 +219,46 @@ When Use Blockout Dates is ON, all attributes are set to Suspended or placeholde
 | [individual type]HealthRecommendation | N/A        |
 
 ---
-## 📝 Summary
+<h2 id="summary">📝 Summary</h2>
+
 The Google Pollen Forecaster Driver for Hubitat transforms Google Pollen API data into actionable, region-aware Current States. Users can monitor both overall pollen trends and specific plant pollen levels, receive health guidance, and integrate this data into Hubitat dashboards and automations. Seasonal blockouts ensure stale data does not trigger actions, and individual toggles allow a clean and customizable experience.
 
 ---
 
-## 🛡️ Disclaimers
-⚠️ Important: Always backup your Hubitat setup and test automation changes incrementally. This repository is intended for educational and experimental purposes only. Professional judgment is required when deploying in your home.
+<h2 id="disclaimers">🛡️ Disclaimers</h2>
 
-**Provided As-Is:** All drivers and apps in this repository are provided as-is, without any warranty or guarantee of suitability for your particular setup. Use at your own risk.
+.\⚠️ Important: Always back up your Hubitat setup and test automation changes incrementally. This repository is intended for educational and experimental purposes only. Users should exercise professional judgment when deploying in their own environments.
 
-**User Responsibility:** You assume full responsibility for any automation decisions, device actions, or outcomes resulting from the use of these drivers or apps. Always test in a safe environment before full deployment.
+**Documentation Authorship Note:** The content of this documentation was created by the project maintainer. AI was used to assist with editorial tasks, including grammar, spelling, readability, formatting consistency, and overall clarity.
 
-**Google API Usage:** Access to Google APIs (Pollen, Air Quality, Weather) is subject to Google’s terms of service, quotas, and billing requirements. Ensure compliance and monitor your usage.
+**Provided As-Is:** All drivers and apps in this repository are provided as-is, without any warranty or guarantee of suitability for your particular setup.
+
+**User Responsibility:** The user assumes full responsibility for any automation decisions, device actions, or outcomes resulting from the use of these drivers or apps. Always test in a safe environment before full deployment.
+
+**Google API Usage:** Access to Google APIs (Pollen, Air Quality, Weather) is subject to Google’s terms of service, quotas, and billing requirements. Users should ensure compliance, monitor their usage, and are responsible for any charges or fees resulting from API calls.
 
 **Community-Developed / Non-Affiliation:** This repository is independently developed and maintained. It is not affiliated with Google LLC, Hubitat Inc., or any other company mentioned.
 
 **Information Accuracy:** Development was performed using the best available knowledge and resources at the time. APIs, Hubitat functionality, or integration methods may change over time, potentially affecting functionality.
 
-**AI-Assisted Development:** All drivers were developed with AI assistance. While code has been tested, AI-generated outputs may include quirks, non-standard patterns, or unexpected behavior.
+**AI-Assisted Development:** All drivers were developed with AI assistance. While the code has been tested, AI-generated outputs may include quirks, non-standard patterns, or unexpected behavior. Users are responsible for testing, monitoring, and verifying the performance and safety of these drivers in their own environments.
 
-**External Dependencies:** Any third-party libraries, dashboards, or tools referenced are the responsibility of the respective developers. Verify compatibility before integrating.
+**External Dependencies:** Any third-party libraries, dashboards, or tools referenced are maintained by their respective developers. Users should verify compatibility and assume responsibility for their integration.
 
 ---
 
-## 🔗 Reference / External Links
+<h2 id="reference-/-external-links">🔗 Reference / External Links</h2>
+
 📘 [Google Pollen API Documentation](https://developers.google.com/pollen)  
 📘 [Google Pollen API Supported Countries & Plants](https://www.google.com/search?q=Google+pollen+API+supported+countries+plants)
 
 
 ---
 
-## 📝 Revision History
+<h2 id="revision-history"> 📜 Revision History</h2>
 
-| Version | Date       | Changes                                                                |
-|---------|------------|------------------------------------------------------------------------|
-| 1.01    | 2025-11-25 | Adding missing information and updated fromating                       |
-| 1.0     | 2025-11-25 | Initial release of Google Pollen Forecaster End User Guide for Hubitat |
-
-
-
+| Version | Date       | Author | Changes                                                                |
+|---------|------------|--------|------------------------------------------------------------------------|
+| 1.020   | 2025-12-15 | DBQ    | Fix ToC links, Formating, Content updates                              |
+| 1.01    | 2025-11-25 | DBQ    | Adding missing content and updated fromating                           |
+| 1.00    | 2025-11-25 | DBQ    | Initial release of Google Pollen Forecaster End User Guide for Hubitat |
