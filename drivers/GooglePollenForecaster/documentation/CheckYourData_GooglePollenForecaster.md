@@ -2,10 +2,9 @@
 ### _driver for Hubitat_
 
 ## 🔢 Version
-**Document Version:** 1.0.1  
-**Date:** 2025-11-11  
-**Managing Author:** David Ball-Quenneville  
-**Associate Author:** ChatGPT
+**Document Version:** 1.0.2  
+**Date:** 2025-12-15  
+**Author:** David Ball-Quenneville  
 
 ---
 
@@ -29,7 +28,7 @@
 
 ---
 
-## 🧭 Overview
+<h2 id="overview">🧭 Overview</h2>
 
 This guide provides a **high-level outline** for reviewing Google Pollen API data used by the *Google Pollen Forecaster* driver in Hubitat. It is designed for **intermediate to advanced users with a technical background**, such as those comfortable working with APIs or structured JSON data. By following this guide, you can confirm that your Google Pollen Forecaster driver is functioning correctly and spot potential issues in the data it receives.
 
@@ -37,7 +36,7 @@ This guide provides a **high-level outline** for reviewing Google Pollen API dat
 
 ---
 
-## 💡 Why You Would Use This Guide
+<h2 id="why-you-would-use-this-guide">💡 Why You Would Use This Guide</h2>
 
 Use this guide to troubleshoot or confirm your Google Pollen Forecaster driver in the following situations:
 
@@ -49,7 +48,7 @@ Use this guide to troubleshoot or confirm your Google Pollen Forecaster driver i
 
 ---
 
-## 🧾 Viewing & Exploring API Data
+<h2 id="viewing-exploring-api-data">🧾 Viewing & Exploring API Data\</h2>
 
 You can quickly explore Google Pollen API data without developer-level tools:
 
@@ -88,7 +87,7 @@ Focus on these parts of the JSON response:
 
 ---
 
-## 🧠 Visual Quick Reference: JSON Structure
+<h2 id="visual-quick-reference-json-structure">🧠 Visual Quick Reference: JSON Structure</h2>
 
 ```
 Root Object\
@@ -111,7 +110,7 @@ Root Object\
 
 ---
 
-## 🔢 Understanding Pollen Data
+<h2 id="understanding-pollen-data">🔢 Understanding Pollen Data</h2>
 
 The Universal Pollen Index (UPI) uses a **0–5 scale**:
 
@@ -136,7 +135,7 @@ Forecast day structure:
 
 ---
 
-## 💡 Example Output
+<h2 id="example-output">💡 Example Output</h2>
 
 Simplified 5-day Toronto forecast:
 
@@ -167,10 +166,9 @@ Simplified 5-day Toronto forecast:
   ]
 }
 ```
-## Interpretation
+### Interpretation
 
-**Region:** Canada (`regionCode`: "CA")  
-**Date:** 2025-10-23  
+**Region:** Canada (`regionCode`: "CA")  **Date:** 2025-10-23  
 **Tree pollen:** Moderate (UPI 3)  
 **Grass pollen:** Low (UPI 1)  
 **Weed pollen:** Low (UPI 1)  
@@ -179,7 +177,7 @@ Simplified 5-day Toronto forecast:
 
 ---
 
-## ⚙️ Optional: Excel or Google Sheets Visualization
+<h2 id="optional-excel-or-google-sheets-visualization">⚙️Optional: Excel or Google Sheets Visualization</h2>
 
 1. Copy the JSON response from the API.  
 2. Use the **Import JSON** feature or add-on in Excel/Google Sheets.  
@@ -188,7 +186,7 @@ Simplified 5-day Toronto forecast:
 
 ---
 
-## 🔗 References / External Links
+<h2 id="references-/-external-links">🔗 References / External Links</h2>
 
 📘 [Google Pollen API Documentation](https://developers.google.com/pollen)  
 📘 [JSON Viewer (stack.hu)](https://jsonviewer.stack.hu)  
@@ -196,29 +194,38 @@ Simplified 5-day Toronto forecast:
 
 ---
 
-## 📝 Summary
+<h2 id="summary">📝 Summary</h2>
 
 This high-level guide helps **intermediate to advanced users** review and understand Google Pollen API data. By focusing on `pollenTypeInfo` and `indexInfo`, you can quickly identify missing, unusual, or partial data and confirm that your Hubitat automations rely on accurate pollen information.
 
 ---
 
-## 🛡️ Disclaimers
+<h2 id="disclaimers">🛡️ Disclaimers</h2>
 
-> ⚠️ **Important:** Always backup your Hubitat setup and test automation changes incrementally. This repository is intended for **educational and experimental purposes only**. Professional judgment is required when deploying in your home.
+>⚠️ Important: Always back up your Hubitat setup and test automation changes incrementally. This repository is intended for educational and experimental purposes only. Users should exercise professional judgment when deploying in their own environments.
 
-* **Provided As-Is:** All drivers and apps in this repository are provided as-is, **without any warranty** or guarantee of suitability for your particular setup. Use at your own risk.  
-* **User Responsibility:** You assume **full responsibility** for any automation decisions, device actions, or outcomes resulting from the use of these drivers or apps. Always test in a safe environment before full deployment.  
-* **Google API Usage:** Access to Google APIs (Pollen, Air Quality, Weather) is subject to **Google’s terms of service, quotas, and billing requirements**. Ensure compliance and monitor your usage.  
-* **Community-Developed / Non-Affiliation:** This repository is **independently developed and maintained**. It is not affiliated with Google LLC, Hubitat Inc., or any other company mentioned.  
-* **Information Accuracy:** Development was performed using the best available knowledge and resources at the time. APIs, Hubitat functionality, or integration methods may change over time, potentially affecting functionality.  
-* **AI-Assisted Development:** All drivers were developed with the assistance of AI to my specifications. While code has been tested and refined, AI-assisted outputs may include **quirks, non-standard patterns, or unexpected behavior**. Use caution and review thoroughly before deploying in critical systems.  
-* **External Dependencies:** Any third-party libraries, dashboards, or tools referenced are the responsibility of the respective developers. Users should **verify compatibility** and review documentation before integrating.
+**Documentation Authorship Note:** The content of this documentation was created by the project maintainer. AI was used to assist with editorial tasks, including grammar, spelling, readability, formatting consistency, and overall clarity.
+
+**Provided As-Is:** All drivers and apps in this repository are provided as-is, without any warranty or guarantee of suitability for your particular setup.
+
+**User Responsibility:** The user assumes full responsibility for any automation decisions, device actions, or outcomes resulting from the use of these drivers or apps. Always test in a safe environment before full deployment.
+
+**Google API Usage:** Access to Google APIs (Pollen, Air Quality, Weather) is subject to Google’s terms of service, quotas, and billing requirements. Users should ensure compliance, monitor their usage, and are responsible for any charges or fees resulting from API calls.
+
+**Community-Developed / Non-Affiliation:** This repository is independently developed and maintained. It is not affiliated with Google LLC, Hubitat Inc., or any other company mentioned.
+
+**Information Accuracy:** Development was performed using the best available knowledge and resources at the time. APIs, Hubitat functionality, or integration methods may change over time, potentially affecting functionality.
+
+**AI-Assisted Development:** All drivers were developed with AI assistance. While the code has been tested, AI-generated outputs may include quirks, non-standard patterns, or unexpected behavior. Users are responsible for testing, monitoring, and verifying the performance and safety of these drivers in their own environments.
+
+**External Dependencies:** Any third-party libraries, dashboards, or tools referenced are maintained by their respective developers. Users should verify compatibility and assume responsibility for their integration.
 
 ---
 
-## 📜 Revision History
+<h2 id="revision-history"> 📜 Revision History</h2>
 
-| Version | Date       | Description                                                                                                       |
-|---------|------------|-------------------------------------------------------------------------------------------------------------------|
-| 1.0.1   | 2025-11-11 | Updated Overview for intermediate/advanced users, added high-level JSON visualization, and fixed Disclaimers.    |
-| 1.0     | 2025-10-23 | Initial release — created detailed guide for viewing and understanding Google Pollen API data in Hubitat testing. |
+| Version | Date       | Author | Changes                                                                                                           |
+|---------|------------|--------|-------------------------------------------------------------------------------------------------------------------|
+| 0.12    | 2025-12-10 | DBQ    | Clean up some Content, fix ToC links                                                                              |
+| 1.0.1   | 2025-11-11 | DBQ    | Updated Overview for intermediate/advanced users, added high-level JSON visualization, and fixed Disclaimers.     |
+| 1.0     | 2025-10-23 | DBQ    | Initial release — created detailed guide for viewing and understanding Google Pollen API data in Hubitat testing. |
