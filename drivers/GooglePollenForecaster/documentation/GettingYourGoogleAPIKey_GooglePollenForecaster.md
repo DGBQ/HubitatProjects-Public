@@ -227,8 +227,9 @@ This guide provides complete, step-by-step instructions for obtaining and securi
 
 ---
 
-## 📜 Revision History
-| Version | Date       | Auther | Changes                                                                                              |
+<h2 id="revision-history">📜 Revision History</h2>
+
+| Version | Date       | Author | Changes                                                                                              |
 |---------|------------|--------|------------------------------------------------------------------------------------------------------|
 | 1.20    | 2025-12-15 | DBQ    | ToC links fixed and Content Updates                                                                  |
 | 1.01    | 2025-11-12 | DBQ    | Added references, updated formatting, expanded instructions, improved clarity and step descriptions. |
