@@ -259,6 +259,7 @@ The Google Pollen Forecaster Driver for Hubitat transforms Google Pollen API dat
 
 | Version | Date       | Author | Changes                                                                |
 |---------|------------|--------|------------------------------------------------------------------------|
-| 1.020   | 2025-12-15 | DBQ    | Fix ToC links, Formating, Content updates                              |
-| 1.01    | 2025-11-25 | DBQ    | Adding missing content and updated fromating                           |
-| 1.00    | 2025-11-25 | DBQ    | Initial release of Google Pollen Forecaster End User Guide for Hubitat |
+| 1.00    | 2025-12-15 | DBQ    | Intial Release of: Pollen Guide – Google Pollen Forecaster             |
+| 0.30    | 2025-12-15 | DBQ    | Fix ToC links, Formating, Content updates                              |
+| 0.20    | 2025-11-25 | DBQ    | Adding missing content and updated fromating                           |
+| 0.10    | 2025-11-25 | DBQ    | Initial release of Google Pollen Forecaster End User Guide for Hubitat |

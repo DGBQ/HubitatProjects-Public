@@ -226,6 +226,7 @@ This high-level guide helps **intermediate to advanced users** review and unders
 
 | Version | Date       | Author | Changes                                                                                                           |
 |---------|------------|--------|-------------------------------------------------------------------------------------------------------------------|
+| 1.00    | 2025-12-15 | DBQ    | Intial Release of Checking Your Data - Google Pollen Forecaster                                                   |
 | 0.12    | 2025-12-10 | DBQ    | Clean up some Content, fix ToC links                                                                              |
-| 1.0.1   | 2025-11-11 | DBQ    | Updated Overview for intermediate/advanced users, added high-level JSON visualization, and fixed Disclaimers.     |
-| 1.0     | 2025-10-23 | DBQ    | Initial release — created detailed guide for viewing and understanding Google Pollen API data in Hubitat testing. |
+| 0.11    | 2025-11-11 | DBQ    | Updated Overview for intermediate/advanced users, added high-level JSON visualization, and fixed Disclaimers.     |
+| 0.10    | 2025-10-23 | DBQ    | Initial release — created detailed guide for viewing and understanding Google Pollen API data in Hubitat testing. |

@@ -2,7 +2,7 @@
 ### -Driver for Hubitat-
 
 ## 🔢 Version
-**Document Version:** 0.14 (Draft)
+**Document Version:** 0.15 (Draft)
 **Date:** 2025-12-13 
 **Author:** David Ball-Quenneville  
 
@@ -12,8 +12,12 @@
 <summary>Click to expand Table of Contents</summary>
 
 - 🧭 [Overview](#overview)
-- ⬇️[Installation](#installation)
-- 🛠️ [Setup](#setup)
+- ⚡[Custom Driver Installation](#custom-driver-installation)
+    - 🧰[Installation Options](#installation-options)
+        - 📦[ Hubitat Package Manager](#hubitat-package-manager-hpm-install)
+        - 📥[Manual Install](#manual-install)
+        - 🪄 [Virtual Device Install](#virtual-device-install)
+- 🛠️[Setup](#setup)
 - ⚖️ [Configuration](#configuration)
   - ➡️ [Commands](#commands)
     - 🧮 [Polling Button](#-polling-button)
@@ -55,17 +59,56 @@ By the end, you’ll understand how the driver operates, how data is retrieved a
 
 ---
 
-<h2 id="installation">⬇️ Installation</h2>
+<h2 id="custom-driver-installation">⚡Custom Driver Installation</h2>
 
-> 🚧 **Documentation Scope:** The detailed explanation for this section is currently being finalized.  
-> Please check back in a future Beta release for the complete guide. Thank you for your patience!
+In Hubitat, a **Custom Driver** is a piece of code written to extend the platform’s capabilities beyond the built-in drivers. Unlike the standard drivers provided by Hubitat, which are pre-installed and designed to support common devices with default functionality, custom drivers are created by developers or the community to enable additional features, support unique devices, or integrate third-party services. Each driver defines how the hub interacts with a device or service, including sending commands, receiving data, and exposing attributes for automation. The **Google Pollen Forecaster** is an example of such a custom driver, allowing Hubitat to fetch pollen forecast data from the Google API and use it within your automations.
+
+<h3 id="installation-options">🧰 Installation Options</h3>
+
+The following instructions detail the process for installing the **Google Pollen Forecaster** driver on your Hubitat Elevation hub, along with the credential provisioning required to retrieve data from the Google API. Choose the method that best suits your workflow: either the **Hubitat Package Manager** (recommended, when available) or the **manual installation** method.
+
+<h4 id="hubitat-package-manager-hpm">📦 Hubitat Package Manager (HPM)</h3>
+
+🟡 Note: The driver is not yet available in the Hubitat Package Manager. Check back soon for updates or use the Manual Install method below.
+
+1. Go to **Apps** → open **Hubitat Package Manager (HPM)**.
+2. Use **Search by Keyword** and enter: `Google Pollen Forecaster`.
+3. Select the driver and follow the installation prompts.
+4. Once installed, proceed to **Credential Provisioning** to complete setup.
+
+<h4 id="manual-install">📥Manual Install</h3>
+
+The driver code needs to be installed once into your Hubitat **Drivers Code** section.
+
+##### 🅰️**Method A: Copy and Paste**
+
+1. In Hubitat, go to ***For Developers*** select **Drivers Code** → click **+ New Driver**.
+2. Copy the full contents of the `googlePollenForecaster.groovy` file.
+3. Paste the code into the editor window.
+4. Click **Save** to install the driver.
+
+##### 🅱️**Method B: Import from URL**
+
+1.  In Hubitat, go to ***For Developers*** select **Drivers Code** → click **+ New Driver**.
+2. Click the **Import** button at the top of the editor.
+3. Paste the following URL into the field:
+   ```
+   [https://raw.githubusercontent.com/DGBQ/HubitatProjects-Public/main/drivers/GooglePollenForecaster/GooglePollenForecaster.groovy](https://raw.githubusercontent.com/DGBQ/HubitatProjects-Public/main/drivers/GooglePollenForecaster/GooglePollenForecaster.groovy)
+   ```
+4. Click **Import** again, then click **Save** to install the driver.
+
+<h4 id="virtual-device-install">🪄 Virtual Device Install</h3>
+
+1. Go to **Devices** → **+ Add Device** → select **Virtual**.
+2. In the **Type** dropdown, choose **Google Pollen Forecaster Driver**.
+3. Name your new device (e.g., `Pollen Forecast – Home`).
+4. Click **Save Device**, then proceed to **Driver Configuration** to complete setup.
 
 ---
 
 <h2 id="setup">🛠️ Setup</h2>
 
-Getting started with the driver is simple: just enter your **Google Pollen API key** and save the change, and the driver will begin retrieving data using its default settings. While it works out-of-the-box with minimal setup, reviewing the [**Configuration**](#configurationsection) section is recommended to unlock its full potential—fine-tune polling schedules, enable species-level tracking, manage blockout periods, and adjust other settings for more accurate and reliable pollen forecasts.
-
+Getting started with the driver is simple: just enter your **Google Pollen API key** and save the change, and the driver will begin retrieving data using its default settings. While it works out-of-the-box with minimal setup, reviewing the [**Configuration**](#configuration) section is recommended to unlock its full potential—fine-tune polling schedules, enable species-level tracking, manage blockout periods, and adjust other settings for more accurate and reliable pollen forecasts.
 
 ---
 

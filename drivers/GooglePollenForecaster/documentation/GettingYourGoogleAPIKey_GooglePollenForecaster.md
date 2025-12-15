@@ -231,6 +231,6 @@ This guide provides complete, step-by-step instructions for obtaining and securi
 
 | Version | Date       | Author | Changes                                                                                              |
 |---------|------------|--------|------------------------------------------------------------------------------------------------------|
-| 1.20    | 2025-12-15 | DBQ    | ToC links fixed and Content Updates                                                                  |
-| 1.01    | 2025-11-12 | DBQ    | Added references, updated formatting, expanded instructions, improved clarity and step descriptions. |
-| 1.00    | 2025-10-12 | DBQ    | Initial guide with basic API key setup steps.                                                        |
+| 1.00    | 2025-12-15 | DBQ    | Initial release of: Getting Your Google API Key - Google Pollen Forecaster                           |
+| 0.20    | 2025-12-15 | DBQ    | ToC links fixed and Content Updates                                                                  |
+| 0.10    | 2025-11-12 | DBQ    | Added references, updated formatting, expanded instructions, improved clarity and step descriptions. |
