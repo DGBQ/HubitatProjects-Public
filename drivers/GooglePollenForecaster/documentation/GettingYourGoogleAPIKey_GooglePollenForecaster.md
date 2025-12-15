@@ -74,7 +74,6 @@ This guide is based on the information and interface provided by Google at the t
 3. Agree to the terms of service if prompted.  
 4. Verify you see the GCC Dashboard with a project selector dropdown.
 
-### 🪜 Step 2 – Create or Select a Project
 <h3 id="step-2-create-or-select-a-project">🪜 Step 2 – Create or Select a Project</h3>
 
 **Purpose:** A Project acts as the required container for your Pollen API key, its security restrictions, and its quota limits. It isolates your resources for better organization.
@@ -144,7 +143,6 @@ This guide is based on the information and interface provided by Google at the t
 4. Click **SAVE**.  
 5. Verify Key restrictions shows **“1 API restriction.”**
 
-### 🪜 Step 7 – Quotas and Limits (Cost Control)
 <h3 id="step-7-quotas-and-limits-cost-control">🪜 Step 7 – Quotas and Limits (Cost Control)</h3>
 
 **Purpose:** Setting a quota limit acts as a hard cap on your spending. If you exceed the set limit, Google will return an error instead of charging you for unexpected usage.
