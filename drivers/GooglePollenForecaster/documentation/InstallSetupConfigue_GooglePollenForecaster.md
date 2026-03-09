@@ -1,5 +1,5 @@
 # ⚙️ Install, Setup, Configure – Google Pollen Forecaster
-### -Driver for Hubitat-
+### _for the  driver for Hubitat_
 
 ## 🔢 Version
 **Document Version:** 0.15 (Draft)

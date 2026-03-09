@@ -2,10 +2,9 @@
 ### _driver for Hubitat_  
 
 ## 🔢 Version
-**Version:** 1.0.1  
-**Date:** 2025-10-31  
-**Managing Author:** David Ball-Quenneville  
-**Associate Author:** ChatGPT
+**Version:** 1.0.2  
+**Date:** 2026-02-08  
+- **Author:** David Ball-Quenneville  
 
 ---
 
@@ -30,13 +29,13 @@
 
 ---
 
-## 🧭 Overview
+\<h2 id="overview">🧭 Overview\</h2>
 
 Thank you for your interest in contributing. This project began as an AI-assisted learning experiment and is intended to be a helpful, community-friendly Hubitat driver. Contributions that improve reliability, readability, and usefulness are welcome — but if you plan a major rewrite or new direction, consider forking the repository so your version can evolve independently.
 
 ---
 
-## 📜 Project Philosophy
+\<h2 id="project-philosophy">📜 Project Philosophy\</h2>
 
 This repository started as a practical, hands-on experiment: a Software Implementation Project Manager exploring prompt engineering and Hubitat development. It’s meant to be both useful and instructive.
 
@@ -44,15 +43,15 @@ If you’re interested in extending or enhancing the driver, you’re encouraged
 
 ---
 
-## 🤝 How to Contribute
+\<h2 id="how-to-contribute">🤝 How to Contribute\</h2>
 
-### 🔃Fork & Branching
+\<h3 id="fork-branching">🔃Fork & Branching\</h3>
 
 - Fork the repository and create a feature branch:  
   `git checkout -b feature/your-feature-name`  
 - Keep branches focused and limited in scope (one feature or fix per branch).
 
-### 🔀Pull Request Requirements
+<h3 id="pull-request-requirements">🔀Pull Request Requirements</h3>
 
 - Open a PR from your branch to `main` with a descriptive title and a clear description of the change.  
 - Include testing notes: how you tested, what to watch for, and any relevant Hubitat logs or screenshots.  
@@ -61,7 +60,7 @@ If you’re interested in extending or enhancing the driver, you’re encouraged
 
 ---
 
-## 🧪 Testing & QA
+\<h2 id="testing-qa">🧪 Testing & QA\</h2>
 
 Please test thoroughly before submitting a PR. Best-practice checks include:
 
@@ -74,7 +73,7 @@ Please test thoroughly before submitting a PR. Best-practice checks include:
 
 ---
 
-## 🐞 Reporting Bugs
+\<h2 id="reporting-bugs">🐞 Reporting Bugs\</h2>
 
 Please use GitHub Issues (not forum posts) to report bugs — that helps track and resolve problems in a single place.
 
@@ -88,7 +87,7 @@ When opening an issue:
 
 ---
 
-## 📄 Formatting & Documentation
+\<h2 id="formatting-documentation">📄 Formatting & Documentation\</h2>
 
 Follow the project’s documentation standards to keep things consistent and readable:
 
@@ -100,7 +99,7 @@ Follow the project’s documentation standards to keep things consistent and rea
 
 ---
 
-## 📘 AI & Responsible Development
+\<h2 id="ai-responsible-development">📘 AI & Responsible Development\</h2>
 
 This project was created with AI-assisted prompts and iterative human review. When contributing:
 
@@ -112,22 +111,25 @@ This helps maintain transparency and improves the project’s learning value.
 
 ---
 
-## 👥 Community & Code of Conduct
+\<h2 id="community-code-of-conduct">👥 Community & Code of Conduct\</h2>
+
 
 - This project follows Hubitat’s community standards. Be respectful, constructive, and professional in all communications.  
 - If you’re unsure about tone or wording, lean on clarity and kindness. Persistent abuse or hostile behaviour will not be tolerated.
 
 ---
 
-## 🎓 Acknowledgements
+\<h2 id="acknowledgements">🎓 Acknowledgements\</h2>
+
 
 Thanks to the Hubitat Community for inspiration, the contributors who test and improve the project, and the tools (including AI) that made experimentation faster and more accessible.
 
 ---
 
-## 📝 Revision History
+\<h2 id="revision-history">📝 Revision History\</h2>
 
-| Version | Date       | Author      | Changes                                                               |
-|---------|------------|-------------|-----------------------------------------------------------------------|
-| 1.0.1   | 2025-11-10 | DBQ/ChatGpt | Refinements to format and phrasing                                    |
-| 1.0.0   | 2025-10-31 | DBQ/ChatGpt | Initial CONTRIBUTING.md aligned with Hubitat Markdown & Voice Guides. |
+| Version | Date       | Author | Changes                                                               |
+|---------|------------|--------|-----------------------------------------------------------------------|
+| 1.0.2   | 2026-02-08 | DBQ    | Formating                                                             |
+| 1.0.1   | 2025-11-10 | DBQ    | Refinements to format and phrasing                                    |
+| 1.0.0   | 2025-10-31 | DBQ/   | Initial CONTRIBUTING.md aligned with Hubitat Markdown & Voice Guides. |

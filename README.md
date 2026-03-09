@@ -1,9 +1,9 @@
 # My Hubitat Projects - Public Repository 
 
 ## 🔢 Version
-- **Document Version:** 1.0.3
-- **Date:** 2025-11-10  
-- **Author:** DBQ
+- **Document Version:** 1.0.4
+- **Date:** 2026-02-08  
+- **Author:** David Ball-Quenneville  
 
 ---
 
@@ -27,7 +27,7 @@
 
 ---
 
-## 🧭 Overview
+\<h2 id="overview">🧭 Overview\</h2>
 
 Welcome to **DBQ’s HubitatProjects-Public** repository, a curated collection of Hubitat drivers  and possible future apps, maintained by a semi-retired software implementation project manager and smart home enthusiast. These projects are practical, approachable, and designed to be helpful for anyone looking to expand their Hubitat experience. They also reflect a hands-on, iterative learning process.  
 
@@ -39,15 +39,15 @@ Currently, the repository includes tools like **Google Pollen Forecaster** and m
 
 ---
 
-## 🗂️ Repository Contents
+\<h2 id="repository-contents">🗂️ Repository Contents\</h2>
 
 This repository hosts a collection of **Hubitat drivers** and possible future Hubitat Applications. Each project includes installation guides, configuration instructions, and technical references.  
 
 ---
 
-### 🪛 Current Drivers
+\<h3 id="current-drivers">🪛 Current Drivers\</h3>
 
-#### 🌿Google Pollen Forecaster
+\<h4 id="google-pollen-forecaster">🌿Google Pollen Forecaster\</h4>
 - **Folder:** `drivers/GooglePollenForecaster/`  
 - **Purpose:** Provides daily pollen forecasts.  
 - **Files included:**  
@@ -59,7 +59,8 @@ This repository hosts a collection of **Hubitat drivers** and possible future Hu
 
   ---
 
-### 🔮 Future Projects
+\<h3 id="future-projects">🔮 Future Projects\</h3>
+
 - **Google Air Quality Tracker** — localized air quality information  
 - **Google Weather Forecaster** — improved weather automation  
 - Each future project will follow the same folder structure and include full documentation.
@@ -68,13 +69,14 @@ This repository hosts a collection of **Hubitat drivers** and possible future Hu
 
 ---
 
-## 🤝 Contribution & Support
+\<h2 id="contribution-support">🤝 Contribution & Support\</h2>
 
 I welcome contributions, suggestions, and bug reports for all projects in this repository. Since each driver or app may have unique setup or behavior, please refer to the specific project README for detailed instructions.  
 
 ---
 
-### 🐞 Reporting Bugs
+\<h3 id="reporting-bugs">🐞 Reporting Bugs\</h3>
+
 For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo/google-pollen-forecaster/issues) page rather than the Hubitat Community forums. This ensures issues are tracked, discussed, and resolved in an organized manner.
 
 - Include Hubitat firmware version, driver version (if available), and exact steps to reproduce.  
@@ -85,7 +87,8 @@ For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo
 
 ---
 
-### ✨ Contributing
+\<h3 id="contributing">✨ Contributing\</h3>
+
 - Fork a repository and experiment freely — this is a great way to learn and explore.  
 - Pull requests are welcome if you have improvements or enhancements.  
 - Follow Hubitat conventions and include clear, well-commented code.  
@@ -97,14 +100,14 @@ For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo
 
 ---
 
-## ⚖️ License & Versioning License & Versioning
+\<h2 id="license-versioning-license-versioning">⚖️ License & Versioning License & Versioning\</h2>
 
 - **License:** All projects in this repository are shared under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0), which allows you to freely use, modify, and distribute the code while providing proper attribution.  
 - **Versioning:** Each driver or app maintains its own `CHANGELOG.md` for version history. Please refer to the project-specific changelog for detailed release notes and updates.
 
 ---
 
-## 🔗 References / External Links
+\<h2 id="references-/-external-links">🔗 References / External Links\</h2>
 
 - [Hubitat Community Forum](https://community.hubitat.com/) — support, discussions, and tips from the community.  
 - [HD+ Android Dashboard](https://community.hubitat.com/t/release-hd-android-dashboard/41674) — dashboard used with some projects.  
@@ -120,7 +123,7 @@ For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo
 
   ---
 
-## 🛡️ Disclaimers
+\<h2 id="disclaimers">🛡️ Disclaimers\</h2>
 
 - **Provided as-is:** All drivers and apps in this repository are provided as-is, without any warranty or guarantee of suitability for your particular setup. Use at your own risk.  
 - **User responsibility:** You assume full responsibility for any automation decisions, device actions, or outcomes resulting from the use of these drivers or apps. Always test in a safe environment before full deployment.  
@@ -134,10 +137,11 @@ For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo
 
 ---
 
-## 📝 Revision History
+\<h2 id="revision-history">📝 Revision History\</h2>
 
 | Version | Date       | Author | Changes                                                      |
 |---------|------------|--------|--------------------------------------------------------------|
+| 1.0.4   | 2026-02-08 | DBQ    | Formating changes, some wording changes                      |
 | 1.0.3   | 2025-11-10 | DBQ    | Formating changes, some wording changes                      |
 | 1.0.2   | 2025-11-10 | DBQ    | Formating changes, some wording changes                      |
 | 1.0.1   | 2025-11-06 | DBQ    | Tweak some wording and added "coming soon"                   |

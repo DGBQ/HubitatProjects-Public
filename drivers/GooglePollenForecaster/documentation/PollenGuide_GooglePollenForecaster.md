@@ -1,5 +1,5 @@
-# 🌱 Pollen Guide – Google Pollen Forecaster
-### _Driver for Hubitat_
+#  🌱 Pollen Guide – Google Pollen Forecaster
+### _for the  driver for Hubitat_
 
 ## 🔢 Version
 **Document Version:** 1.20  
