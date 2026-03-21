@@ -1,8 +1,8 @@
 # My Hubitat Projects - Public Repository 
 
 ## 🔢 Version
-- **Document Version:** 1.0.4
-- **Date:** 2026-02-08  
+- **Document Version:** 1.0.5
+- **Date:** 2026-03-21  
 - **Author:** David Ball-Quenneville  
 
 ---
