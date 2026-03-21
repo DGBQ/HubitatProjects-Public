@@ -2,7 +2,7 @@
 ### _Managed Production Drivers for the Automate Pulse 2 Hub_
 
 ## 🔢 Version Control
-**Document Control:** 2.2.0  
+**Document Control:** 1.0.0 
 **Current Releases:** Beta  
 - **Hub Driver:** `RolleaseAcmedaHub-DGBQ.groovy`
 - **Shade Driver:** `RolleaseAcmedaShade_DGBQ.groovy` 
@@ -99,6 +99,6 @@ This driver overhaul was a collaborative effort between a human **Project Manage
 
 | Version | Date | Changes |
 | :--- | :--- | :--- |
-| **1.0.0** | 2026-03-20 | **Documentation Overhaul.** Refined Overview, clarified project roles, and added AI-assisted development disclaimers. |
+| **1.0.0** | 2026-03-20 | New Readme |
 
 > **_Note on Versioning_**: For a line-by-line technical breakdown of every update, please refer to the [Hub Driver Changelog](./Documentation/CHANGELOG-Hub.md) and [Shade Driver Changelog](./Documentation/CHANGELOG-Shade.md) located in the documentation folder.
