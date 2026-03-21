@@ -99,11 +99,6 @@ This driver overhaul was a collaborative effort between a human **Project Manage
 
 | Version | Date | Changes |
 | :--- | :--- | :--- |
-| **2.2.0** | 2026-03-20 | **Documentation Overhaul.** Refined Overview, clarified project roles, and added AI-assisted development disclaimers. |
-| **2.1.2** | 2026-03-09 | **Baseline Stable.** Fixed ClassCastException. Added Battery & RSSI. |
-| **2.1.0** | 2026-03-09 | Initial DGBQ fork; implemented Battery capability. |
-| **2.0.0** | 2026-03-09 | Maintenance takeover; updated namespace to DGBQ. |
+| **1.0.0** | 2026-03-20 | **Documentation Overhaul.** Refined Overview, clarified project roles, and added AI-assisted development disclaimers. |
 
-> **_Note on Versioning_**: For a line-by-line technical breakdown of every update, please refer to the [Hub Driver Changelog](./Documentation/
-CHANGELOG-Hub.md) and [Shade Driver Changelog](./Documentation/
-CHANGELOG-Shade.md) located in the documentation folder.
+> **_Note on Versioning_**: For a line-by-line technical breakdown of every update, please refer to the [Hub Driver Changelog](./Documentation/CHANGELOG-Hub.md) and [Shade Driver Changelog](./Documentation/CHANGELOG-Shade.md) located in the documentation folder.
