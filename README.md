@@ -13,7 +13,7 @@
 
 - [🧭 Overview](#-overview)
 - [🗂️ Repository Contents](#-repository-contents)
-   - [🛠️ Current Drivers](#-current-drivers)
+   - [🛠️ Driver Project](#-driver-project)
    - [🔮 Future Projects](#-future-projects)
 - [🤝 Contribution & Support](#-contribution--support)
   - [🐞 Reporting Bugs](#-reporting-bugs)
@@ -27,7 +27,7 @@
 
 ---
 
-\<h2 id="overview">🧭 Overview\</h2>
+<h2 id="overview">🧭 Overview\</h2>
 
 Welcome to **DBQ’s HubitatProjects-Public** repository, a curated collection of Hubitat drivers  and possible future apps, maintained by a semi-retired software implementation project manager and smart home enthusiast. These projects are practical, approachable, and designed to be helpful for anyone looking to expand their Hubitat experience. They also reflect a hands-on, iterative learning process.  
 
@@ -35,31 +35,40 @@ All projects started as personal experiments using **Artificial intelligence (AI
 
 The code in this repository was built using AI, following my specifications. This approach allowed me to explore **prompt engineering, iterative testing, and practical development** while learning the *do's and don’ts* of Hubitat automation and AI-driven development. Though I am not a professional developer, I’ve had the pleasure of collaborating with many skilled developers, and these projects reflect the lessons learned along the way. That said, an experienced Groovy developer may find the code choices and structure a bit irregular — I expect that, given my team member names were **Deep Seek, ChatGPT, Gemini, Copilot and Gork**.  
 
-Currently, the repository includes tools like **Google Pollen Forecaster** and may expand in the future to **Google Air Quality Tracker** and **Google Weather Forecaster**, addressing localization gaps found in other drivers. All projects include full documentation, configuration guides, and usage examples — so you can explore, experiment, and hopefully enjoy the trials and tribulations of AI-driven development alongside me.
+Currently, the repository includes tools like **Google Pollen Forecaster** (and may expand in the future to **Google Air Quality Tracker** and **Google Weather Forecaster**), addressing localization gaps found in other drivers. 
+
+Recently, I added updated drivers for the Rollease Acmeda Hub and Shades.
+
+All projects include full documentation, configuration guides, and usage examples — so you can explore, experiment, and hopefully enjoy the trials and tribulations of AI-driven development alongside me.
 
 ---
 
-\<h2 id="repository-contents">🗂️ Repository Contents\</h2>
+<h2 id="repository-contents">🗂️ Repository Contents\</h2>
 
 This repository hosts a collection of **Hubitat drivers** and possible future Hubitat Applications. Each project includes installation guides, configuration instructions, and technical references.  
 
 ---
 
-\<h3 id="current-drivers">🪛 Current Drivers\</h3>
+  <h3 id="driver-project">🛠️ Driver Project</h3>
 
-\<h4 id="google-pollen-forecaster">🌿Google Pollen Forecaster\</h4>
-- **Folder:** `drivers/GooglePollenForecaster/`  
-- **Purpose:** Provides daily pollen forecasts.  
-- **Files included:**  
-  - `googlePollenForecastor.groovy` — driver code  
-  - `README.md` — project-specific documentation  
-  - `CONTRIBUTING.md` — instructions for contributing  
-  - `CHANGELOG.md` — version history  
-  - `documentation/` — installation guide, configuration guide, technical reference  
+- **Location:** `Drivers/<Project>/<Driver>/`  
+- **Purpose:** Contains a Hubitat driver and its supporting documentation.  
+
+- **Root Contents:**  
+  - `<drivername>.groovy` — main driver code  
+  - `README.md` — overview and usage details  
+  - `LICENSE` — licensing information  
+  - *(optional)* additional supporting files  
+
+- **Documentation Folder:** `Documentation/`  
+  - `CHANGELOG.md` — version history and updates  
+  - Installation / Setup / Configuration guides  
+  - Technical reference and implementation details  
+  - *(optional)* design notes or behind-the-scenes logic  
 
   ---
 
-\<h3 id="future-projects">🔮 Future Projects\</h3>
+<h3 id="future-projects">🔮 Future Projects\</h3>
 
 - **Google Air Quality Tracker** — localized air quality information  
 - **Google Weather Forecaster** — improved weather automation  
@@ -69,13 +78,13 @@ This repository hosts a collection of **Hubitat drivers** and possible future Hu
 
 ---
 
-\<h2 id="contribution-support">🤝 Contribution & Support\</h2>
+<h2 id="contribution-support">🤝 Contribution & Support\</h2>
 
 I welcome contributions, suggestions, and bug reports for all projects in this repository. Since each driver or app may have unique setup or behavior, please refer to the specific project README for detailed instructions.  
 
 ---
 
-\<h3 id="reporting-bugs">🐞 Reporting Bugs\</h3>
+<h3 id="reporting-bugs">🐞 Reporting Bugs\</h3>
 
 For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo/google-pollen-forecaster/issues) page rather than the Hubitat Community forums. This ensures issues are tracked, discussed, and resolved in an organized manner.
 
@@ -87,7 +96,7 @@ For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo
 
 ---
 
-\<h3 id="contributing">✨ Contributing\</h3>
+<h3 id="contributing">✨ Contributing\</h3>
 
 - Fork a repository and experiment freely — this is a great way to learn and explore.  
 - Pull requests are welcome if you have improvements or enhancements.  
@@ -100,14 +109,14 @@ For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo
 
 ---
 
-\<h2 id="license-versioning-license-versioning">⚖️ License & Versioning License & Versioning\</h2>
+<h2 id="license-versioning-license-versioning">⚖️ License & Versioning License & Versioning\</h2>
 
 - **License:** All projects in this repository are shared under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0), which allows you to freely use, modify, and distribute the code while providing proper attribution.  
 - **Versioning:** Each driver or app maintains its own `CHANGELOG.md` for version history. Please refer to the project-specific changelog for detailed release notes and updates.
 
 ---
 
-\<h2 id="references-/-external-links">🔗 References / External Links\</h2>
+<h2 id="references-/-external-links">🔗 References / External Links\</h2>
 
 - [Hubitat Community Forum](https://community.hubitat.com/) — support, discussions, and tips from the community.  
 - [HD+ Android Dashboard](https://community.hubitat.com/t/release-hd-android-dashboard/41674) — dashboard used with some projects.  
@@ -123,7 +132,7 @@ For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo
 
   ---
 
-\<h2 id="disclaimers">🛡️ Disclaimers\</h2>
+<h2 id="disclaimers">🛡️ Disclaimers\</h2>
 
 - **Provided as-is:** All drivers and apps in this repository are provided as-is, without any warranty or guarantee of suitability for your particular setup. Use at your own risk.  
 - **User responsibility:** You assume full responsibility for any automation decisions, device actions, or outcomes resulting from the use of these drivers or apps. Always test in a safe environment before full deployment.  
@@ -137,10 +146,11 @@ For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo
 
 ---
 
-\<h2 id="revision-history">📝 Revision History\</h2>
+<h2 id="revision-history">📝 Revision History\</h2>
 
 | Version | Date       | Author | Changes                                                      |
 |---------|------------|--------|--------------------------------------------------------------|
+|     1.0.5    |      2026-03-21      |    DBQ    |                               Formating changes, some wording changes                               |
 | 1.0.4   | 2026-02-08 | DBQ    | Formating changes, some wording changes                      |
 | 1.0.3   | 2025-11-10 | DBQ    | Formating changes, some wording changes                      |
 | 1.0.2   | 2025-11-10 | DBQ    | Formating changes, some wording changes                      |
