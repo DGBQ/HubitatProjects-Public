@@ -24,7 +24,7 @@
 
 ---
 
-<h2 id="overview">🧭 Overview\</h2>
+<h2 id="overview">🧭 Overview</h2>
 
 This repository contains a stabilized (in beta) and refined version of the Hubitat drivers for the **Rollease Acmeda Automate Pulse 2 Hub**. 
 
@@ -63,7 +63,7 @@ To successfully integrate your shades, you must install **both** of the followin
 <h2 id="documentation">📑 Documentation</h2>
 
 ### **Quick Start, Installation, Configuration**
-* **[Setup Guide](\Documentation/QuickStartInstallation&Configuration):** I am currently refining the step-by-step setup instructions for this fork. Please check back shortly for a full visual guide.
+* **[Setup Guide](./Documentation/QuickStartInstallation\&Configuration.md):** I am currently refining the step-by-step setup instructions for this fork. Please check back shortly for a full visual guide.
 
 ### **Project Retrospective & Technical Deep-Dives**
 For those interested in the "under-the-hood" logic of this fork, I have documented the overhaul process, including the protocol analysis and code auditing performed during development:
@@ -104,4 +104,6 @@ This driver overhaul was a collaborative effort between a human **Project Manage
 | **2.1.0** | 2026-03-09 | Initial DGBQ fork; implemented Battery capability. |
 | **2.0.0** | 2026-03-09 | Maintenance takeover; updated namespace to DGBQ. |
 
-> **_Note on Versioning_**: For a line-by-line technical breakdown of every update, please refer to the [Hub Driver Changelog](CHANGELOG-Hub.md) and [Shade Driver Changelog](CHANGELOG-Shade.md) located in the documentation folder.
+> **_Note on Versioning_**: For a line-by-line technical breakdown of every update, please refer to the [Hub Driver Changelog](./Documentation/
+CHANGELOG-Hub.md) and [Shade Driver Changelog](./Documentation/
+CHANGELOG-Shade.md) located in the documentation folder.
