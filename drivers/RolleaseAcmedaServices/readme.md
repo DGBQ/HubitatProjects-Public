@@ -68,14 +68,14 @@ To successfully integrate your shades, you must install **both** of the followin
 ### **Project Retrospective & Technical Deep-Dives**
 For those interested in the "under-the-hood" logic of this fork, I have documented the overhaul process, including the protocol analysis and code auditing performed during development:
 
-* **[Hub Logic Retrospective](RETR-Hub-Logic.md):** A summary of the Telnet stability and logic-casting fixes for the Parent driver.
-* **[Shade Logic Retrospective](RETR-Shade-Logic.md):** Details on battery telemetry, RSSI reporting, and proactive state updates.
-* **[Shade Management Change Notice](NOTICE-Shade-Management-v3.2.0.md):** **Important!** Read this if you are upgrading from an older version, as the management API has changed.
+* **[Hub Logic Retrospective](./Documentation/RETR-Hub-Logic.md):** A summary of the Telnet stability and logic-casting fixes for the Parent driver.
+* **[Shade Logic Retrospective](./Documentation/RETR-Shade-Logic.md):** Details on battery telemetry, RSSI reporting, and proactive state updates.
+* **[Shade Management Change Notice](./Documentation/NOTICE-Shade-Management-v3.2.0.md):** **Important!** Read this if you are upgrading from an older version, as the management API has changed.
 
 ### **Revision History**
 Detailed version-by-version changes are available in the specific changelogs:
-* **[Hub Driver Changelog](CHANGELOG-Hub.md)**
-* **[Shade Driver Changelog](CHANGELOG-Shade.md)**
+* **[Hub Driver Changelog](./Documentation/CHANGELOG-Hub.md)**
+* **[Shade Driver Changelog](./Documentation/CHANGELOG-Shade.md)**
 
 ---
 
