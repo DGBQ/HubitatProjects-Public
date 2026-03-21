@@ -70,7 +70,6 @@ For those interested in the "under-the-hood" logic of this fork, I have document
 
 * **[Hub Logic Retrospective](./Documentation/RETR-Hub-Logic.md):** A summary of the Telnet stability and logic-casting fixes for the Parent driver.
 * **[Shade Logic Retrospective](./Documentation/RETR-Shade-Logic.md):** Details on battery telemetry, RSSI reporting, and proactive state updates.
-* **[Shade Management Change Notice](./Documentation/NOTICE-Shade-Management-v3.2.0.md):** **Important!** Read this if you are upgrading from an older version, as the management API has changed.
 
 ### **Revision History**
 Detailed version-by-version changes are available in the specific changelogs:
