@@ -12,12 +12,12 @@
 <details>
 <summary>Click to expand Table of Contents</summary>
 
-- [🧭 Overview](#overview)
+-  [🧭Overview](#overview)
 - [💡 Why You Would Use This Guide](#why-you-would-use-this-guide)
-- [🧾 Viewing & Exploring API Data](#viewing--exploring-api-data)
-- [🧠 Visual Quick Reference: JSON Structure](#visual-quick-reference-json-structure)
-- [🔢 Understanding Pollen Data](#understanding-pollen-data)
-- [💡 Example Output](#example-output)
+- [🧾  Viewing & Exploring API Data](#viewing--exploring-api-data)
+- [🧠Visual Quick Reference: JSON Structure](#visual-quick-reference-json-structure)
+- [🔢Understanding Pollen Data](#understanding-pollen-data)
+- [💡Example Output](#example-output)
 - [⚙️ Optional: Excel or Google Sheets Visualization](#optional-excel-or-google-sheets-visualization)
 - [🔗 References / External Links](#references--external-links)
 - [📝 Summary](#summary)

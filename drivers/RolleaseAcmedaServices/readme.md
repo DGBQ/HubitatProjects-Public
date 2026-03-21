@@ -13,18 +13,18 @@
 <details>
 <summary>Click to expand Table of Contents</summary>
 
-- 🧭 [Overview](#overview)
-- 🚀 [Key Improvements](#key-improvements)
-- 📦 [Required Files](#required-files)
-- 📑 [Documentation](#documentation)
-- 🛡️ [Disclaimers](#disclaimers)
-- 📜 [Revision History](#revision-history)
+-  [🧭Overview](#overview)
+- [🚀 Key Improvements](#key-improvements)
+- [📦Required Files](#required-files)
+- [📑 Documentation](#documentation)
+- [🛡️ Disclaimers](#disclaimers)
+- [📜 Revision History](#revision-history)
 
 </details>
 
 ---
 
-<h2 id="overview">🧭 Overview</h2>
+<h2 id="overview">🧭 Overview\</h2>
 
 This repository contains a stabilized (in beta) and refined version of the Hubitat drivers for the **Rollease Acmeda Automate Pulse 2 Hub**. 
 
