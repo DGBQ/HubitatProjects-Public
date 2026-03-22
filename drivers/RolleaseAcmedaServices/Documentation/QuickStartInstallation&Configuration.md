@@ -4,8 +4,8 @@
 ## 🔢 Version Control
 **Document Control:** 1.0.0  
 **Current Releases:** Beta  
-- **Hub Driver:** `RolleaseAcmedaHub-DGBQ_3310.groovy` (V3.3.10)  
-- **Shade Driver:** `RolleaseAcmedaShade_DGBQ_231.groovy` (V2.3.1)  
+- **Hub Driver:** `RolleaseAcmedaHub-DGBQ.groovy`
+- **Shade Driver:** `RolleaseAcmedaShade_DGBQ.groovy`  
 **Maintenance Lead:** David Ball-Quenneville (DGBQ)  
 **Original Developer:** Younes Oughla (Yoonoo)
 
@@ -13,13 +13,13 @@
 <details>
 <summary>Click to expand Table of Contents</summary>
 
-- 🧭 [Introduction & Overview](#introduction)
-- 🚀 [Quick Start & Installation](#installation)
-- ⚙️ [Parent Hub: Command & Configuration](#parent-reference)
-- 🪟 [Shade (Child): Command & Configuration](#shade-reference)
-- 🛠️ [Support & Enhancements](#support-and-enhancements)
-- 🛡️ [Disclaimers](#disclaimers)
-- 📜 [Revision History](#revision-history)
+-  [🧭Introduction & Overview](#introduction)
+-  [🚀Quick Start & Installation](#installation)
+-  [⚙️Parent Hub: Command & Configuration](#parent-reference)
+-  [🪟Shade (Child): Command & Configuration](#shade-reference)
+-  [🛠️Support & Enhancements](#support-and-enhancements)
+-  [🛡️Disclaimers](#disclaimers)
+-  [📜Revision History](#revision-history)
 
 </details>
 
