@@ -2,10 +2,10 @@
 ### _Managed Production Drivers for the Automate Pulse 2 Hub_
 
 ## 🔢 Version Control
-**Document Control:** 1.0.0 
-**Current Releases:** Beta  
-- **Hub Driver:** `RolleaseAcmedaHub-DGBQ.groovy`
-- **Shade Driver:** `RolleaseAcmedaShade_DGBQ.groovy` 
+**Document Control:** 1.0.0  
+**Current Status:** Beta  
+- **Hub Driver:** `RolleaseAcmedaHub-DGBQ.groovy` (v2.2.0)
+- **Shade Driver:** `RolleaseAcmedaShade-DGBQ.groovy` (v2.3.1)  
 **Maintenance Lead:** David Ball-Quenneville (DGBQ)  
 **Original Developer:** Younes Oughla (Yoonoo)
 
@@ -13,9 +13,9 @@
 <details>
 <summary>Click to expand Table of Contents</summary>
 
--  [🧭Overview](#overview)
+- [🧭 Overview](#overview)
 - [🚀 Key Improvements](#key-improvements)
-- [📦Required Files](#required-files)
+- [📦 Required Files](#required-files)
 - [📑 Documentation](#documentation)
 - [🛡️ Disclaimers](#disclaimers)
 - [📜 Revision History](#revision-history)
@@ -55,21 +55,21 @@ Acting as the **Project Manager** for this overhaul, I utilized **Gemini AI** fo
 
 To successfully integrate your shades, you must install **both** of the following drivers into your Hubitat "Drivers Code" section. I have maintained the original naming convention for consistency, adding the **-DGBQ** suffix to clearly identify this maintained fork from the original work.
 
-1.  **`RolleaseAcmedaHub-DGBQ.groovy` (The Parent):** Acts as the primary communication bridge. You will create one virtual device using this driver to manage the persistent Telnet connection to your Pulse 2 Hub’s IP address.
-2.  **`RolleaseAcmedaShade-DGBQ.groovy` (The Child):** The device-level driver. Once the Parent Hub is initialized and a discovery command is issued, it will automatically "spawn" your blinds, creating a dynamic device for each motor using this driver.
+1. **`RolleaseAcmedaHub-DGBQ.groovy` (The Parent):** Acts as the primary communication bridge. You will create one virtual device using this driver to manage the persistent Telnet connection to your Pulse 2 Hub’s IP address.
+2. **`RolleaseAcmedaShade-DGBQ.groovy` (The Child):** The device-level driver. Once the Parent Hub is initialized and a discovery command is issued, it will automatically "spawn" your blinds, creating a dynamic device for each motor using this driver.
 
 ---
 
 <h2 id="documentation">📑 Documentation</h2>
 
 ### **Quick Start, Installation, Configuration**
-* **[Setup Guide](./Documentation/QuickStartInstallation\&Configuration.md):** I am currently refining the step-by-step setup instructions for this fork. Please check back shortly for a full visual guide.
+* **[Setup Guide](./Documentation/QuickStartInstallation&Configuration.md):** I am currently refining the step-by-step setup instructions for this fork. Please check back shortly for a full visual guide.
 
-### **Project Retrospective & Technical Deep-Dives**
-For those interested in the "under-the-hood" logic of this fork, I have documented the overhaul process, including the protocol analysis and code auditing performed during development:
+### **Operational Specifications & Technical Deep-Dives**
+For those interested in the "under-the-hood" logic of this fork, I have documented the overhaul process and the functional specifications of the drivers:
 
-* **[Hub Logic Retrospective](./Documentation/RETR-Hub-Logic.md):** A summary of the Telnet stability and logic-casting fixes for the Parent driver.
-* **[Shade Logic Retrospective](./Documentation/RETR-Shade-Logic.md):** Details on battery telemetry, RSSI reporting, and proactive state updates.
+* **[RETR-Hub-Logic](./Documentation/RETR-Hub-Logic.md):** Specification for the Telnet stability, error silencing, and Parent driver logic.
+* **[RETR-Shade-Logic](./Documentation/RETR-Shade-Logic.md):** Specification for the proactive state engine, battery telemetry, and RSSI reporting.
 
 ### **Revision History**
 Detailed version-by-version changes are available in the specific changelogs:
@@ -88,7 +88,7 @@ This driver overhaul was a collaborative effort between a human **Project Manage
 * **User Responsibility:** Users should monitor their initial installation to ensure their specific hardware configuration responds as intended.
 
 ### **Operational Safety**
-* **_Insuo Periculo_:** While these drivers are tested in a live production environment, custom code interacts with your local network and hardware in unique ways. I am not responsible for any hardware malfunctions, "ghost" shade movements, or unintended Hubitat behavior.
+* **_Insuo Periculo_**: While these drivers are tested in a live production environment, custom code interacts with your local network and hardware in unique ways. I am not responsible for any hardware malfunctions, "ghost" shade movements, or unintended Hubitat behavior.
 * **Database Integrity:** It is a best practice to perform a **Full Cloud or Local Backup** of your Hubitat Elevation database before installing or updating custom driver code.
 * **Beta Status:** Please note that this fork is currently in **Beta**. While stable in my environment, you may encounter edge cases depending on your specific Pulse 2 Hub firmware version.
 
@@ -98,6 +98,4 @@ This driver overhaul was a collaborative effort between a human **Project Manage
 
 | Version | Date | Changes |
 | :--- | :--- | :--- |
-| **1.0.0** | 2026-03-20 | New Readme |
-
-> **_Note on Versioning_**: For a line-by-line technical breakdown of every update, please refer to the [Hub Driver Changelog](./Documentation/CHANGELOG-Hub.md) and [Shade Driver Changelog](./Documentation/CHANGELOG-Shade.md) located in the documentation folder.
+| **1.0.0** | 2026-03-22 | New Readme; Operational Specification Alignment |
