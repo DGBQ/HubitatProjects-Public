@@ -7,7 +7,7 @@ This directory serves as a historical archive for the original **Rollease Acmeda
 ### Original Source Information
 * **Original Author:** Younes Oughla
 * **Last Known Update:** March 2020
-* **Original Repository:** [younes-oughla/hubitat-rollease](https://github.com/younes-oughla/hubitat-rollease)
+* **Original Repository:** [Yoonoo/Hubitat (Rollease Acmeda)](https://github.com/Yoonoo/Hubitat/tree/master/Rollease%20Acmeda)
 
 ### Why is this folder separate?
 These drivers have not been updated or maintained by the original author since approximately **March 2020**. While they provided the foundational structure for this integration, they are considered **deprecated** for the following reasons:
