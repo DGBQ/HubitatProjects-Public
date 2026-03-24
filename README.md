@@ -124,13 +124,15 @@ For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo
   > ⚠️ Disclaimer: I haven’t personally used Rule Machine much. Please reach out to
   > the Hubitat Community for guidance if needed.  
 - Google APIs:  
-  - [Google Pollen API](#) — used for pollen forecasts.  
+  - [Google Pollen API](./drivers/GoogleEnvironmentalServices/GooglePollenForecaster/documentation) — used for pollen forecasts.  
   - [Google Air Quality API](#) — future expansion.  
   - [Google Weather API](#) — future expansion.
+- Rollease Acmeda
+    - [Hub and Shade drivers](./drivers/RolleaseAcmedaServices/Documentation) — used for window shade control
 
   ---
 
-<h2 id="disclaimers">🛡️ Disclaimers\</h2>
+<h2 id="disclaimers">🛡️ Disclaimers</h2>
 
 - **Provided as-is:** All drivers and apps in this repository are provided as-is, without any warranty or guarantee of suitability for your particular setup. Use at your own risk.  
 - **User responsibility:** You assume full responsibility for any automation decisions, device actions, or outcomes resulting from the use of these drivers or apps. Always test in a safe environment before full deployment.  
