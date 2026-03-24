@@ -1,11 +1,11 @@
 # 🏠 Rollease Acmeda Hubitat Integration
-### _Managed Production Drivers for the Automate Pulse 2 Hub_
+### _Managed Production Drivers for the Automate Pulse 2 Hub (README)_
 
 ## 🔢 Version Control
 **Document Control:** 1.0.0  
 **Current Status:** Beta  
-- **Hub Driver:** `RolleaseAcmedaHub-DGBQ.groovy` (v2.2.0)
-- **Shade Driver:** `RolleaseAcmedaShade-DGBQ.groovy` (v2.3.1)  
+- **Hub Driver:** `RolleaseAcmedaHub-DGBQ.groovy`
+- **Shade Driver:** `RolleaseAcmedaShade-DGBQ.groovy`
 **Maintenance Lead:** David Ball-Quenneville (DGBQ)  
 **Original Developer:** Younes Oughla (Yoonoo)
 
@@ -58,6 +58,8 @@ To successfully integrate your shades, you must install **both** of the followin
 1. **`RolleaseAcmedaHub-DGBQ.groovy` (The Parent):** Acts as the primary communication bridge. You will create one virtual device using this driver to manage the persistent Telnet connection to your Pulse 2 Hub’s IP address.
 2. **`RolleaseAcmedaShade-DGBQ.groovy` (The Child):** The device-level driver. Once the Parent Hub is initialized and a discovery command is issued, it will automatically "spawn" your blinds, creating a dynamic device for each motor using this driver.
 
+⚠️ **Note on Legacy Files:** Original, unedited source files (circa 2020) are available in the [`LegacySource`](./LegacySource) folder for developer reference. For active use, always install the drivers from the root directory.
+
 ---
 
 <h2 id="documentation">📑 Documentation</h2>
@@ -98,4 +100,5 @@ This driver overhaul was a collaborative effort between a human **Project Manage
 
 | Version | Date | Changes |
 | :--- | :--- | :--- |
+|      **1.0.1**     |      2026-03-24      |                         Update links and add more information                        |
 | **1.0.0** | 2026-03-22 | New Readme; Operational Specification Alignment |
