@@ -1,0 +1,1 @@
+# Google Air Quality Tracker Plus – CHANGELOG
