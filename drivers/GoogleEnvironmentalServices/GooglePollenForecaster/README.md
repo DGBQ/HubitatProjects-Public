@@ -38,9 +38,9 @@
 
 ---
 
-\<h2 id="overview">🧭 Overview\</h2>
+<h2 id="overview">🧭 Overview\</h2>
 
-The Google Pollen Forecaster Driver is a custom Hubitat Elevation driver that fetches hyper-local pollen forecasts from the Google Pollen API, delivering real-time and multi-day data for trees, grasses, weeds, and specific allergens like ragweed and birch. Designed for Hubitat smart-home enthusiasts, that maybe allergy sufferers, it provides actionable health recommendations and seamless integration with Hubitat automations and dashboards.
+The Google Pollen Forecaster Driver is a custom Hubitat Elevation driver that fetches hyper-local pollen forecasts using the Google Pollen API, delivering real-time and multi-day data for trees, grasses, weeds, and specific allergens like ragweed and birch. Designed for Hubitat smart-home enthusiasts, that maybe allergy sufferers, it provides actionable health recommendations and seamless integration with Hubitat automations and dashboards.
 
 **Why Use This Driver?**
 - **Hyper-Local Accuracy:** 1 km² resolution for precise forecasts (up to 5 days).  
@@ -50,7 +50,7 @@ The Google Pollen Forecaster Driver is a custom Hubitat Elevation driver that fe
 
 ---
 
-\<h2 id="background-motivation">📜 Background & Motivation\</h2>
+<h2 id="background-motivation">📜 Background & Motivation</h2>
 
 This driver started as an AI-assisted learning experiment by a Software Implementation Project Manager (with very limited coding experience) exploring prompt engineering and Hubitat development. I knew a professional developer could likely have built it more efficiently, but for me, this was a hands-on way to learn the dos and don’ts, and experience the occasional “why on earth did you do that?” moments in AI-driven development.
 
@@ -73,19 +73,19 @@ For complete instructions on installation, setup, and configuration, see the ful
 3. Select the driver and follow the installation prompts.  
 4. Once installed, proceed to Driver Configuration to complete setup.
 
-\<h3 id="manual-install">🛠️ Manual Install\</h3>
+<h3 id="manual-install">🛠️ Manual Install</h3>
 
 
-\<h4 id="driver-code-install">💾 Driver Code Install\</h3>
+<h4 id="driver-code-install">💾 Driver Code Install</h3>
 
 1. In Hubitat, go to Drivers Code → click + New Driver.  
 2. Copy the full code from googlePollenForecaster.groovy or important the raw code for this link:
 ```
-https://raw.githubusercontent.com/DGBQ/HubitatProjects-Public/main/drivers/GooglePollenForecaster/GooglePollenForecaster.groovy
+https://github.com/DGBQ/HubitatProjects-Public/tree/main/drivers/GoogleEnvironmentalServices/GooglePollenForecaster
 ```
 3. Click Save to install the driver.
 
-\<h4 id="virtual-device-install">🪄 Virtual Device Install\</h4>
+<h4 id="virtual-device-install">🪄 Virtual Device Install</h4>
 
 
 1. Go to Devices → + Add Device → select Virtual.  
@@ -93,7 +93,7 @@ https://raw.githubusercontent.com/DGBQ/HubitatProjects-Public/main/drivers/Googl
 3. Name your new device (e.g., Pollen Forecast – Home).  
 4. Click Save Device, then proceed to Driver Configuration to complete setup.
 
-\<h3 id="driver-configuration">⚙️ Driver Configuration\</h3>
+<h3 id="driver-configuration">⚙️ Driver Configuration</h3>
 
 1. Open the virtual device driver  you created for example`Pollen Forecast – Home`. 
 2. Select the Preferences tab.  
@@ -109,7 +109,7 @@ https://raw.githubusercontent.com/DGBQ/HubitatProjects-Public/main/drivers/Googl
 
 ---
 
-\<h2 id="getting-your-google-api-key">🔑 Getting Your Google API Key\</h2>
+<h2 id="getting-your-google-api-key">🔑 Getting Your Google API Key</h2>
 
 To use the Google Pollen Forecaster Driver, you’ll need an active Google API Key. Follow these steps to quickly create and secure your key in the Google Cloud Console:
 
@@ -126,7 +126,7 @@ To use the Google Pollen Forecaster Driver, you’ll need an active Google API K
 
 ---
 
-\<h2 id="example-use-cases">🧠 Example Use Cases\</h2>
+<h2 id="example-use-cases">🧠 Example Use Cases</h2>
 
 Explore practical ways to automate your environment with pollen data, from allergy notifications to seasonal routines.
 
@@ -137,7 +137,7 @@ Explore practical ways to automate your environment with pollen data, from aller
 
 ---
 
-\<h2 id="supported-pollen-types">🌿 Supported Pollen Types\</h2>
+<h2 id="supported-pollen-types">🌿 Supported Pollen Types</h2>
 
 The driver supports 20 pollen types, including:
 
@@ -151,7 +151,7 @@ Full list: 📄 [Pollen Types Supported](documents/PollenTypesSupported_GooglePo
 
 ---
 
-\<h2 id="troubleshooting">🔍 Troubleshooting\</h2>
+<h2 id="troubleshooting">🔍 Troubleshooting</h2>
 
 Common issues and quick fixes for the driver.
 
@@ -165,7 +165,7 @@ Common issues and quick fixes for the driver.
 
 ---
 
-\<h2 id="documentation-library">📚 Documentation Library\</h2>
+<h2 id="documentation-library">📚 Documentation Library</h2>
 
 Browse related guides, reference materials, and driver updates to deepen your understanding and keep your setup current.
 
@@ -173,26 +173,25 @@ Browse related guides, reference materials, and driver updates to deepen your un
 
 ---
 
-\<h2 id="repository-structure">📦 Repository Structure\</h2>
+<h2 id="repository-structure">📦 Repository Structure</h2>
 
 (Include a clear breakdown of the GitHub repo structure here — directories, key files, purpose.)  
 
 ```
 HubitatProjects-Public
-	├─drivers
-    	├─GooglePollenForecaster
-        ├─ documents\
-			│ ├─ TBD
-			│ └─ ...\
-		├─ README.md
-        ├─ CHANGELOG.md
-		├─ CONTRIBUTING.md        
-		└─ googlePollenForecaster.groovy
+	├─ drivers
+    ├─ GoogleEnvironmentalServices
+      ├─ GooglePollenForecaster
+        ├─ documentation\
+			    │ ...\
+      ├─ CHANGELOG.md
+      ├─ README.md
+      └─ googlePollenForecaster.groovy
 ```
 
 ---
 
-\<h2 id="reporting-bugs">🐞 Reporting Bugs\</h2>
+<h2 id="reporting-bugs">🐞 Reporting Bugs</h2>
 
 For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo/google-pollen-forecaster/issues) page rather than the Hubitat Community forums. This ensures issues are tracked, discussed, and resolved in an organized manner.
 
@@ -204,11 +203,11 @@ For issues and bugs, please use the [GitHub Issues](https://github.com/your-repo
 
 ---
 
-\<h2 id="contributing">🤝 Contributing\</h2>
+<h2 id="contributing">🤝 Contributing</h2>
 
 If you’re interested in extending or enhancing the driver, you’re encouraged to fork the repository and create your own version. This approach supports creativity and allows each variation to evolve independently. Pull requests with improvements are also welcome, but the primary goal is to inspire new builds.
 
-\<h3 id="how-to-contribute">How to Contribute\</h3>
+<h3 id="how-to-contribute">How to Contribute</h3>
 
 - Fork the repository and create a feature branch.  
 - Submit pull requests with clear descriptions and testing notes.  
@@ -221,16 +220,14 @@ If you’re interested in extending or enhancing the driver, you’re encouraged
 
 ---
 
-\<h2 id="license-versioning">⚖️ License & Versioning\</h2>
+<h2 id="license-versioning">⚖️ License & Versioning</h2>
 
 - **License:** All projects in this repository are shared under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0), which allows you to freely use, modify, and distribute the code while providing proper attribution.  
 - **Versioning:** Each driver or app maintains its own `CHANGELOG.md` for version history. Please refer to the project-specific changelog for detailed release notes and updates.
 
-💡 Tip: Respecting attribution helps keep open-source projects like this thriving, and it’s always fun to see how others experiment and build upon these drivers.
-
 ---
 
-\<h2 id="references-/-external-links">🔗 References / External Links\</h2>
+<h2 id="references-/-external-links">🔗 References / External Links</h2>
 
 **Changelog and Contribution** 
 📘 [Change log](CHANGELOG.md)
@@ -268,6 +265,7 @@ If you’re interested in extending or enhancing the driver, you’re encouraged
 
 | Version | Date       | Author | Description                                                                                                                                                   |
 |---------|------------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|     1.0.3    |      2026-03-25      |    DBQ    |                                                                                Info updates, Formating                                                                               |
 | 1.0.2   | 2026-02-08 | DBQ    | Formating                                                                                                                                                     |
 | 1.0.1   | 2025-10-30 | DBQ    | Added Background & Motivation, Reporting Bugs, integrated approved Quick Start, Getting Your Google API Key, Example Use Cases; updated ToC and doc metadata. |
 | 1.0     | 2025-10-15 | DBQ/   | Initial document creation for the Google Pollen Forecaster Driver.                                                                                            |
