@@ -21,8 +21,13 @@
  * limitations under the License.
  *
  * Revision History:
+ * v2.3.9 - 2026-04-07 - David Ball-Quenneville
+ *   - Added stub implementations for StartPositionChange and StopPositionChange (logs INFO).
+ *   - Added duration parameter warning to setLevel (logs INFO if non‑zero duration supplied).
+ *   - No functional changes; improves user feedback for unsupported UI commands.
+ *
  * v2.3.8 - 2026-04-07 - David Ball-Quenneville
- *   - Prevent duplicate position confirmation logs: only log when position actually changes.
+ *   - Prevent duplicate position confirmation logs.
  *
  * v2.3.7 - 2026-04-07 - David Ball-Quenneville
  *   - Added INFO logs for command initiation and final position confirmation.
@@ -53,7 +58,7 @@ metadata {
         name: "Rollease Acmeda Shade",
         namespace: "DGBQ",
         author: "David Ball-Quenneville (based on Younes Oughla previous work",
-        version: "2.3.8",
+        version: "2.3.9",
         vid: "generic-shade",
         importUrl: ""
     ) {
@@ -123,8 +128,11 @@ def initialize() {
 def on() { open() }
 def off() { close() }
 
-def setLevel(level) {
+def setLevel(level, duration = null) {
     int target = level instanceof Number ? level.toInteger() : level.toString().toInteger()
+    if (duration != null && duration.toString().toInteger() > 0) {
+        logInfo "Duration parameter is ignored. Shade will move directly to ${target}%."
+    }
     setPosition(target)
 }
 
@@ -203,10 +211,22 @@ def toggle() {
     }
 }
 
+// ========== Stubs for non‑functional capability commands ==========
+def startPositionChange(String direction) {
+    logInfo "Start Position Change is not supported by this driver. Use Open/Close or Set Position instead."
+}
+
+def stopPositionChange() {
+    logInfo "Stop Position Change is not supported by this driver. Use Stop instead."
+}
+
+// ========== Manual Battery Status Request ==========
 def requestBatteryStatus() {
     logInfo "Requesting battery status from hub"
     parent.sendTelnetCommand("!${motorAddress}pVc?")
 }
+
+// ========== Parsing Hub Responses ==========
 
 def parse(String msg) {
     if (msg.startsWith("!${motorAddress}r")) {

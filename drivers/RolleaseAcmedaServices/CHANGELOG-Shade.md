@@ -1,5 +1,10 @@
 # Rollease Acmeda Shade (Child) – CHANGELOG
 
+#### v2.3.9 - 2026-04-07 - David Ball-Quenneville
+ - Added stub implementations for StartPositionChange and StopPositionChange (logs INFO).
+ - Added duration parameter warning to setLevel (logs INFO if non‑zero duration supplied).
+ - No functional changes; improves user feedback for unsupported UI commands.
+   
 ####  v2.3.8 - 2026-04-07 - David Ball-Quenneville
   - Prevent duplicate position confirmation logs: only log when position actually changes.
 
