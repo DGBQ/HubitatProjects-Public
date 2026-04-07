@@ -21,6 +21,13 @@
  * limitations under the License.
  *
  * Revision History:
+ * v3.3.12 - 2026-04-07 - David Ball-Quenneville
+ *   - Fixed preference access in logging helpers (now uses settings. prefix) to ensure reliable INFO logs.
+ *
+ * v3.3.11 - 2026-04-06 - David Ball-Quenneville
+ *   - Added Auto-Revert Debug preference.
+ *   - Removed redundant custom commands SendMsg and SendPulse.
+ *
  * v3.3.10 - 2026-03-20 - David Ball-Quenneville
  * Note: Full revision history available in RolleaseAcmedaHub-DGBQ_CHANGELOG.md
  */
@@ -30,7 +37,7 @@ metadata {
         name: "Rollease Acmeda Hub",
         namespace: "DGBQ",
         author: "David Ball-Quenneville (based on Younes Oughla previous work)",
-        version: "3.3.10",
+        version: "3.3.12",
         vid: "generic-shade",
         importUrl: ""
     ) {
@@ -39,17 +46,10 @@ metadata {
         capability "Configuration"
         capability "Telnet"
 
-        // Shade management commands (grouped with "Shade" prefix)
         command "ShadeDiscover"
         command "ShadeAdd", ["string"]
         command "ShadeRemove", ["string"]
         command "ShadeDeleteAll"
-
-        // Send command aliases (grouped with "Send" prefix)
-        command "SendMsg", ["string"]
-        command "SendPulse", ["string"]
-
-        // Original sendTelnetCommand kept for child device compatibility
         command "sendTelnetCommand", ["string"]
 
         attribute "status", "enum", ["online", "idle", "offline"]
@@ -61,17 +61,12 @@ metadata {
 
     preferences {
         input name: "hubAddress", type: "text", title: "Hub Address", description: "IP Address of the Hub", defaultValue: "", required: true, displayDuringSetup: true
-
         input name: "hubPort", type: "text", title: "Hub Port", description: "Telnet port of the Pulse 2 Hub", defaultValue: "1487", required: true, displayDuringSetup: true
-
         input name: "connectionRetryInterval", type: "number", title: "Connection Retry Interval", description: "Number of seconds to wait before re-attempting the connection. 0=Do Not Retry", defaultValue: 300, required: false, displayDuringSetup: false
-
         input name: "maxIdleTime", type: "number", title: "Maximum Idle Time", description: "Reset connection to hub if no status reports are received within this time (Seconds). 0=Disabled", defaultValue: 3600, required: false, displayDuringSetup: false
-
         input name: "enableSilencer", type: "bool", title: "Enable Error Silencer", description: "Intercept 'Stream is closed' and log as INFO instead of ERROR", defaultValue: true, required: false, displayDuringSetup: false
-
-        input name: "logEnable", type: "bool", title: "Enable Debug Logging", description: "Detailed logs; auto‑off after 30 mins", defaultValue: false, required: false, displayDuringSetup: false
-
+        input name: "logEnable", type: "bool", title: "Enable Debug Logging", description: "Detailed logs; auto‑off after 30 mins (unless Auto-Revert is disabled)", defaultValue: false, required: false, displayDuringSetup: false
+        input name: "autoRevertDebug", type: "bool", title: "Auto-Revert Debug", description: "When enabled, automatically turns off debug logging after 30 minutes. When disabled, debug stays on until manually turned off.", defaultValue: true, required: false, displayDuringSetup: false
         input name: "txtEnable", type: "bool", title: "Enable Description Logging", description: "Human‑readable activity logs", defaultValue: true, required: false, displayDuringSetup: false
     }
 }
@@ -81,7 +76,10 @@ def installed() {
 }
 
 def updated() {
-    if (!logEnable) unschedule("logsOff")
+    if (!settings.autoRevertDebug) {
+        unschedule("logsOff")
+    }
+    if (!settings.logEnable) unschedule("logsOff")
     initialize()
 }
 
@@ -91,20 +89,24 @@ def initialize() {
 
     telnetClose()
 
-    // Validate port
-    def port = (hubPort ?: "1487").toString()
+    def port = (settings.hubPort ?: "1487").toString()
     if (!port.isInteger() || port.toInteger() <= 0) {
         logError "Invalid hubPort: ${port}. Using default 1487."
         port = "1487"
     }
 
-    logInfo "Opening telnet connection to ${hubAddress}:${port}"
-    telnetConnect([termChars:[59]], hubAddress, port.toInteger(), null, null)
+    logInfo "Opening telnet connection to ${settings.hubAddress}:${port}"
+    telnetConnect([termChars:[59]], settings.hubAddress, port.toInteger(), null, null)
     startMaxIdleTimer()
 
-    if (logEnable) runIn(1800, "logsOff")
-    sendEvent(name: "status", value: "online")
+    if (settings.logEnable && settings.autoRevertDebug) {
+        runIn(1800, "logsOff")
+        logDebug "Debug logging will auto-disable after 30 minutes (Auto-Revert enabled)"
+    } else if (settings.logEnable && !settings.autoRevertDebug) {
+        logDebug "Debug logging will remain on (Auto-Revert disabled)"
+    }
 
+    sendEvent(name: "status", value: "online")
     rebuildShadeList()
     updateShadesAttribute()
 }
@@ -115,9 +117,7 @@ def rebuildShadeList() {
         def motorId = child.settings?.motorAddress
         if (motorId == null) {
             def parts = child.deviceNetworkId.split("-")
-            if (parts.size() > 1) {
-                motorId = parts[-1]
-            }
+            if (parts.size() > 1) motorId = parts[-1]
         }
         if (motorId) {
             ids << motorId
@@ -141,11 +141,8 @@ def sendTelnetCommand(String commandString) {
     return new hubitat.device.HubAction(commandString, hubitat.device.Protocol.TELNET)
 }
 
-def SendMsg(String commandString) { sendTelnetCommand(commandString) }
-def SendPulse(String commandString) { sendTelnetCommand(commandString) }
-
 def telnetStatus(String status) {
-    if (enableSilencer && (status.contains("Stream is closed") || status.contains("receive error"))) {
+    if (settings.enableSilencer && (status.contains("Stream is closed") || status.contains("receive error"))) {
         logInfo "Hub finished transmission and disconnected (Normal Behavior)."
         sendEvent(name: "status", value: "idle")
         return
@@ -154,9 +151,9 @@ def telnetStatus(String status) {
     logError "telnetStatus: error: " + status
     sendEvent(name: "status", value: "offline")
 
-    if (connectionRetryInterval > 1) {
-        logInfo "Will try to reconnect in ${connectionRetryInterval} seconds"
-        runIn(connectionRetryInterval, initialize)
+    if (settings.connectionRetryInterval > 1) {
+        logInfo "Will try to reconnect in ${settings.connectionRetryInterval} seconds"
+        runIn(settings.connectionRetryInterval, initialize)
     }
 }
 
@@ -167,9 +164,7 @@ private parse(String msg) {
     motorAddress = msg[1..3]
     lastThree = msg[-3..-1]
 
-    if (motorAddress == "EUC" || motorAddress == "BR1" || lastThree == "Enp") {
-        return
-    }
+    if (motorAddress == "EUC" || motorAddress == "BR1" || lastThree == "Enp") return
 
     String thisId = device.deviceNetworkId
     def cd = getChildDevice("${thisId}-${motorAddress}")
@@ -199,17 +194,13 @@ private def updateLastAction(child, String msg) {
         if (posMatch) {
             int pos = 100 - Integer.parseInt(posMatch[0][1])
             action = "Moving to ${pos}%"
-        } else {
-            action = "Moving"
-        }
+        } else action = "Moving"
     } else if (msg.contains("r")) {
         def posMatch = (msg =~ /r(\d{3})/)
         if (posMatch) {
             int pos = 100 - Integer.parseInt(posMatch[0][1])
             action = "Position verified at ${pos}%"
-        } else {
-            action = "Position Verified"
-        }
+        } else action = "Position Verified"
     } else if (msg.contains("s")) {
         action = "Stopped"
     }
@@ -217,9 +208,9 @@ private def updateLastAction(child, String msg) {
 }
 
 private def startMaxIdleTimer() {
-    if (maxIdleTime > 0) {
-        logDebug "Will reset connection if no events received in ${maxIdleTime} seconds"
-        runIn(maxIdleTime, "resetConnection")
+    if (settings.maxIdleTime > 0) {
+        logDebug "Will reset connection if no events received in ${settings.maxIdleTime} seconds"
+        runIn(settings.maxIdleTime, "resetConnection")
     }
 }
 
@@ -236,14 +227,15 @@ private def resetConnection() {
 }
 
 def logsOff() {
-    log.warn "Debug logging auto-disabled"
-    device.updateSetting("logEnable", [value: "false", type: "bool"])
+    if (settings.logEnable) {
+        log.warn "Debug logging auto-disabled (Auto-Revert was enabled)"
+        device.updateSetting("logEnable", [value: "false", type: "bool"])
+    }
 }
 
 def ShadeDeleteAll() {
     logWarning "Deleting all child devices..."
-    def children = getChildDevices()
-    children.each { child ->
+    getChildDevices().each { child ->
         String motorId = child.settings?.motorAddress
         if (motorId == null) {
             def parts = child.deviceNetworkId.split("-")
@@ -269,11 +261,8 @@ def ShadeDiscover() {
 
 def reportDiscoveryResults() {
     def currentList = state.shadeList ?: []
-    if (currentList.isEmpty()) {
-        logInfo "No shades found or hub did not respond."
-    } else {
-        logInfo "Shades present: ${currentList.join(', ')}"
-    }
+    if (currentList.isEmpty()) logInfo "No shades found or hub did not respond."
+    else logInfo "Shades present: ${currentList.join(', ')}"
 }
 
 def ShadeAdd(String motorId) {
@@ -281,8 +270,7 @@ def ShadeAdd(String motorId) {
         logError "Invalid motor ID: ${motorId}. Must be 3 uppercase letters or digits."
         return
     }
-    def existing = getChildDevice("${device.deviceNetworkId}-${motorId}")
-    if (existing) {
+    if (getChildDevice("${device.deviceNetworkId}-${motorId}")) {
         logWarning "Shade ${motorId} already exists."
         return
     }
@@ -315,10 +303,8 @@ def ShadeRemove(String motorId) {
     logInfo "Manually removing shade: ${motorId}"
     try {
         deleteChildDevice(child.deviceNetworkId)
-        if (state.shadeList) {
-            state.shadeList.remove(motorId)
-            updateShadesAttribute()
-        }
+        if (state.shadeList) state.shadeList.remove(motorId)
+        updateShadesAttribute()
         logInfo "Shade ${motorId} removed."
     } catch (e) {
         logError "Failed to remove shade ${motorId}: ${e.message}"
@@ -326,10 +312,10 @@ def ShadeRemove(String motorId) {
 }
 
 private def logDebug(message) {
-    if (logEnable) log.debug "Pulse 2 [DEBUG]: ${message}"
+    if (settings.logEnable) log.debug "Pulse 2 [DEBUG]: ${message}"
 }
 private def logInfo(message) {
-    if (txtEnable) log.info "Pulse 2 [INFO]: ${message}"
+    if (settings.txtEnable) log.info "Pulse 2 [INFO]: ${message}"
 }
 private def logWarning(message) {
     log.warn "Pulse 2 [WARN]: ${message}"

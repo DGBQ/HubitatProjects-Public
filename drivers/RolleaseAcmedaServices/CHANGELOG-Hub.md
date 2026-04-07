@@ -1,6 +1,14 @@
 # Rollease Acmeda Hub (Parent) – CHANGELOG
 
-####  v3.3.10 – 2026-03-20 – David Ball-Quenneville
+#### v3.3.12 - 2026-04-07 - David Ball-Quenneville
+- Fixed preference access in logging helpers (now uses settings. prefix) to ensure reliable INFO logs.
+
+#### v3.3.11 - 2026-04-06 - David Ball-Quenneville
+- Added Auto-Revert Debug preference to control automatic disabling of debug logs.
+- Removed redundant custom commands SendMsg and SendPulse (kept built‑in sendMsg from Telnet capability).
+- Updated logsOff() to respect autoRevertDebug setting.
+
+#### v3.3.10 – 2026-03-20 – David Ball-Quenneville
 - Changed hubPort preference from number to text to avoid comma formatting.
 - Added port validation with fallback to default if invalid.
 
