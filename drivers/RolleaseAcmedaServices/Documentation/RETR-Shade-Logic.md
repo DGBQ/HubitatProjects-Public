@@ -1,5 +1,6 @@
 # Master Functional Specifications: RETR-Shade-Logic
 
+**File Name:** RETR-Shade-Logic.md (Rollease Engineering Technical Reference Shade Logic)
 **Project Branch:** The Surgical Observer  
 **Integration Logic:** Child Device Architecture with Proactive State-Engine  
 **Document Status:** Final Production Specification

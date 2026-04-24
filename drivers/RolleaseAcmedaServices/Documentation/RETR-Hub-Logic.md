@@ -1,5 +1,6 @@
 # Master Functional Specifications: RETR-Hub-Logic
 
+**File Name:** RETR-Hub-Logic.md (Rollease Engineering Technical Reference Hub Logic)
 **Project Branch:** The Surgical Observer  
 **Integration Logic:** Parent/Child Architecture with Surgical Error Silencer 
 **Document Status:** Final Production Specification
