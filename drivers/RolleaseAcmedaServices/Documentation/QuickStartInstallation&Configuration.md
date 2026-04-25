@@ -2,10 +2,10 @@
 ### _Quick Start, Installation & Configuration_
 
 ## 🔢 Version Control
-**Document Control:** 1.0.0  
+**Document Control:** 1.0.5  
 **Current Releases:** Beta  
-- **Hub Driver:** `RolleaseAcmedaHub-DGBQ.groovy`
-- **Shade Driver:** `RolleaseAcmedaShade_DGBQ.groovy`  
+- **Hub Driver:** `RolleaseAcmedaHub-DGBQ.groovy` (v3.3.12)
+- **Shade Driver:** `RolleaseAcmedaShade_DGBQ.groovy` (v2.3.9)  
 **Maintenance Lead:** David Ball-Quenneville (DGBQ)  
 **Original Developer:** Younes Oughla (Yoonoo)
 
@@ -60,7 +60,7 @@ Following this "Surgical" setup guide will ensure your Pulse 2 Hub communicates 
 4. Check the **Logs** tab; you should see a message confirming a successful Telnet connection.
 
 ### **4. Shade Discovery**
-1. On the Parent Hub device page, click the **`ShadeDiscover`** button.
+1. On the Parent Hub device page, click the **`Shade Discover`** button.
 2. The driver will perform a "White-Hat" query of your Hub to identify all registered motors.
 3. Navigate back to your **Devices** list. Your shades will now appear as Child devices, ready for use.
 
@@ -81,11 +81,10 @@ Commands are manual actions triggered within the Hubitat interface to execute sp
 | **`Configure`** | Re-initializes internal driver settings and commits preferences to the Hubitat database. | Run after changing any Preference. | None. |
 | **`Initialize`** | **The Reset Switch.** Forcibly terminates the current Telnet socket and attempts a clean reconnection. | Use if `status` is `Disconnected`. | Wait 15s between clicks to avoid network buffer hangs. |
 | **`Refresh`** | Queries the Pulse 2 Hub for the immediate position and battery telemetry of every motor. | Use to sync states if a remote was used. | None. |
-| **`Send Msg`** | Transmits a raw ARC protocol string directly to the Hub. | `!001m050` (Move Shade 001 to 50%). | **Advanced only.** Malformed strings can crash the Hub's listener. |
-| **`Send Pulse`** | Transmits a "Keep-Alive" heartbeat signal to prevent socket timeouts. | Automated by driver logic. | Manual use is for latency testing only. |
-| **`Send Telnet Command`** | Sends raw Telnet-layer instructions (distinct from ARC messages). | Blank. | Generally not required for standard use. |
-| **`Shade Add`** | Manually generates a Child Shade device by its 3-digit ID. | Enter `005` to create Shade 5. | Requires the exact ID assigned in the Rollease App. |
-| **`Shade Discover`** | **The Auto-Scanner.** Queries the Hub for all motors and spawns any missing Child devices. | The primary setup tool for new installs. | Process may take up to 30 seconds. |
+| **`sendMsg`** | Transmits a raw ARC protocol string directly to the Hub (provided by the Telnet capability). | `!001m050` (Move Shade 001 to 50%). | **Advanced only.** Malformed strings can crash the Hub's listener. |
+| **`sendTelnetCommand`** | Sends raw Telnet‑layer instructions (distinct from ARC messages). | Blank. | Generally not required for standard use. |
+| **`Shade Add`** | Manually generates a Child Shade device by its 3‑digit ID. | Enter `005` to create Shade 5. | Requires the exact ID assigned in the Rollease App. |
+| **`Shade Discover`** | **The Auto‑Scanner.** Queries the Hub for all motors and spawns any missing Child devices. | The primary setup tool for new installs. | Process may take up to 30 seconds. |
 | **`Shade Remove`** | Deletes a specific Child Shade device from Hubitat by its ID. | Enter `002` to remove Shade 2. | Permanent; removes device from all Rules. |
 | **`Shade Delete All`** | **The Nuclear Option.** Purges every associated Child Shade device from Hubitat. | Use for a complete system reset. | **High Risk:** Breaks all Dashboards and Rules. |
 
@@ -98,18 +97,19 @@ Preferences define the communication parameters and logging behavior of the driv
 | :--- | :--- | :--- | :--- |
 | **Hub Address\*** | The static local IP of your Pulse 2 Hub. | **Mandatory** | None |
 | **Hub Port\*** | The ARC Protocol port for the Pulse 2. | **Mandatory** | **1487** |
-| **Connection Retry Interval** | Seconds the driver waits before attempting to reconnect after a drop. | Optional | **15** |
-| **Maximum Idle Time** | The window of silence allowed before the driver resets the socket. | Optional | **300** |
+| **Connection Retry Interval** | Seconds the driver waits before attempting to reconnect after a drop. | Optional | **300** |
+| **Maximum Idle Time** | The window of silence allowed before the driver resets the socket. | Optional | **3600** |
 | **Enable Error Silencer** | Suppresses the benign `Stream is closed` warnings native to the Hub. | Optional | **Enabled** |
 | **Enable Debug Logging** | Outputs high-detail technical data to the system logs. | Optional | **Off** (Auto-off 30m) |
 | **Enable Description Logging** | Logs human-readable events (e.g., "Shade 1 is Opening"). | Optional | **On** |
+| **Auto-Revert Debug** | When enabled, debug logging turns off after 30 minutes. When disabled, debug stays on until manually turned off. | Optional | **On** |
 
 ---
 
 ### **Current States**
 Current States provide real-time telemetry regarding the Hub's health and activity.
 
-* **`status`**: The primary health indicator. Reports **Connected**, **Disconnected**, or **Initializing**.
+* **`status`**: The primary health indicator. Reports **online**, **idle**, or **offline**.
 * **`lastAction`**: A summary of the most recent internal driver event.
 * **`lastCommand`**: Displays the name of the last button pressed in the UI.
 * **`lastUpdate`**: A high-precision timestamp of the last successful data burst from the Hub.
@@ -124,9 +124,10 @@ Internal memory points used for driver logic.
 ---
 
 ### **Troubleshooting (Parent Level)**
-1. **Status is "Disconnected":** Confirm the **IP Address** and ensure **Hub Port** is set to `1487`. Click `Initialize`.
-2. **Shades Missing during Discovery:** Verify shades are active in the official Rollease Mobile App before running `ShadeDiscover`.
+1. **Status is "offline":** Confirm the **IP Address** and ensure **Hub Port** is set to `1487`. Click `Initialize`.
+2. **Shades Missing during Discovery:** Verify shades are active in the official Rollease Mobile App before running `Shade Discover`.
 3. **Log Noise:** Ensure **Enable Error Silencer** is `Enabled` to filter out non-critical Hub communication spikes.
+4. **Pulse 2 Hub was unplugged or lost power:** After the hub comes back online, the parent driver may not automatically reconnect. Click **`Initialize`** on the parent device to force a clean reconnection.
 
 ---
 
@@ -140,18 +141,19 @@ The **Shade (Child)** driver represents the individual motor head in your window
 ### **Commands**
 Commands are manual actions triggered within the Hubitat interface to control the physical movement or state of the motor.
 
-| Command | Description | Default / Example | Caution |
-| :--- | :--- | :--- | :--- |
-| **`On / Off`** | **The Alexa Fix.** Maps to Open (On) and Close (Off) to prevent "Device not responding" voice errors. | N/A | Essential for reliable Voice Assistant integration. |
-| **`Open / Close`** | Initiates the standard "WindowShade" movement to the fully open (0%) or closed (100%) limits. | N/A | None. |
-| **`Initialize`** | Re-syncs the Child device with the Parent Hub's communication settings. | Use after Parent IP changes. | None. |
-| **`Refresh`** | Forces a targeted poll to the Hub for this specific motor's position, battery, and RSSI telemetry. | Updates all Current States. | None. |
-| **`Set Level`** | Sets position via "SwitchLevel." Accepts **Level** (0-100) and **Duration** (seconds). | `setLevel(50, 0)` | Commonly used by Dashboards and Dimmer-based rules. |
-| **`Set Position`** | Commands the shade to move to a precise percentage (0–100). | `setPosition(25)` | 0 = Fully Open; 100 = Fully Closed. |
-| **`Start Position Change`** | Begins continuous movement in a specified direction (`open` or `close`). | Used for "Press-and-Hold" logic. | Movement continues until a `Stop` command is issued. |
-| **`Stop`** | Immediately halts motor rotation at its current location. | Use during active travel. | **Critical:** The master "Emergency Stop" for all automations. |
-| **`Stop Position Change`** | Ceases movement initiated by a `Start Position Change` command. | N/A | Use to end a "Press-and-Hold" action. |
-| **`Toggle`** | Reverses the current state (if Open, it will Close; if Closed, it will Open). | Useful for single-button remotes. | None. |
+| Command | Description | Notes |
+| :--- | :--- | :--- |
+| **`On` / `Off`** | **The Alexa Fix.** Maps to Open (On) and Close (Off). | Essential for reliable Voice Assistant integration. |
+| **`Open` / `Close`** | Initiates standard movement to fully open (0%) or closed (100%). | Works as expected. |
+| **`Stop`** | Immediately halts motor rotation at its current location. | Critical “Emergency Stop”. |
+| **`Set Position`** | Moves shade to a specific percentage (0–100). | Fully functional. |
+| **`Start Position Change`** | Begins continuous movement (`open`/`close`). | **Not supported** – stub logs an informational message. |
+| **`Stop Position Change`** | Ceases movement initiated by `Start Position Change`. | **Not supported** – stub logs an informational message. |
+| **`Set Level`** | Accepts `level` (0–100) and `duration` (seconds). | The `duration` parameter is ignored (logs a warning). |
+| **`Initialize`** | Re-syncs the Child device with the Parent Hub. | Use after Parent IP changes. |
+| **`Refresh`** | Forces a targeted poll for position, battery, and RSSI. | Updates all Current States. |
+| **`Toggle`** | Reverses the current state (open ↔ close). | Useful for single-button remotes. |
+| **`Request Battery Status`** | Polls the Hub for battery level and voltage. | Immediately updates `battery` and `batteryVoltage`. |
 
 ---
 
@@ -161,8 +163,10 @@ Preferences define the identification and logging behavior for the individual mo
 | Preference | Detail | Requirement | Default |
 | :--- | :--- | :--- | :--- |
 | **Motor Address\*** | The unique 3-digit ARC identifier (e.g., `001`) for this specific shade. | **Mandatory** | None |
-| **Enable Debug Logging** | Outputs high-detail technical tracing to the system logs. | Optional | **Off** (Auto-off 30m) |
+| **Battery Offset** | Adjusts reported battery percentage by a fixed amount (-30 to +30). | Optional | **0** |
 | **Enable Description Logging** | Logs human-readable events (e.g., "Bedroom Shade was Closed"). | Optional | **On** |
+| **Enable Debug Logging** | Outputs high-detail technical tracing to the system logs. | Optional | **Off** (Auto-off 30m) |
+| **Auto-Revert Debug** | When enabled, debug logging turns off after 30 minutes. When disabled, debug stays on until manually turned off. | Optional | **On** |
 
 ---
 
@@ -170,22 +174,22 @@ Preferences define the identification and logging behavior for the individual mo
 Current States provide the live telemetry and operational attributes used for Dashboards, Alexa, and Rule Machine triggers.
 
 * **`battery`**: The calculated charge percentage (0–100%).
-* **`batteryVoltage`**: The raw voltage reading used for precise power monitoring.
-    * *Detail:* Calibrated for the **10.8V to 12.6V** discharge curve.
-* **`closed`**: A binary state (**true/false**) indicating if the shade has reached its lower limit.
-* **`level`**: The numeric position (0–100) used for "SwitchLevel" compatibility.
-* **`moving`**: Indicates if the motor is currently in an active travel state.
-* **`open`**: A binary state (**true/false**) indicating if the shade has reached its upper limit.
+* **`batteryVoltage`**: The raw voltage reading used for precise power monitoring (calibrated for **10.8V to 12.6V** discharge curve).
+* **`closed`**: Binary state indicating if shade has reached its lower limit.
+* **`level`**: Numeric position (0–100) for "SwitchLevel" compatibility.
+* **`moving`**: Indicates if the motor is currently in active travel.
+* **`open`**: Binary state indicating if shade has reached its upper limit.
 * **`position`**: The primary vertical location attribute (0–100).
-* **`rssi`**: **Received Signal Strength Indicator.** Measures the RF link quality between the Hub and motor.
-* **`voltage`**: Displays the current voltage of the Li-ion battery pack.
-* **`windowShade`**: The primary operational status (**open**, **closed**, **opening**, **closing**, or **partially open**).
+* **`rssi`**: Received Signal Strength Indicator (RF link quality).
+* **`voltage`**: Current voltage of the Li‑ion battery pack.
+* **`windowShade`**: Operational status: `open`, `closed`, `opening`, `closing`, or `partially open`.
 
 ---
 
 ### **State Variables**
 Internal memory points used by the driver logic.
-* **`lastDirection`**: Tracks the trajectory of the motor's most recent movement (`up` or `down`).
+* **`lastDirection`**: Tracks the trajectory of the motor's most recent movement (`opening` or `closing`).
+* **`lastLoggedPosition`**: Prevents duplicate position confirmation logs.
 
 ---
 
@@ -193,15 +197,16 @@ Internal memory points used by the driver logic.
 1. **"Device Not Responding" in Alexa:** Ensure you are using the `On/Off` commands in your voice routines. This fork's **Switch Capability** was implemented specifically to eliminate this latency error.
 2. **RSSI is "0" or Missing:** The Hub has not yet pushed a signal update. Click **`Refresh`** on the Child device to force a telemetry pull.
 3. **Shade Moves the Wrong Way:** Verify your open/close limits are set correctly in the native Rollease App before integrating with Hubitat.
+4. **Non‑functional commands (`Start Position Change`, `Stop Position Change`, `Set Level` duration):** These are stubs that log an informational message. They do not affect normal operation and may be supported in a future update.
 
 ---
 
 <h2 id="support-and-enhancements">🛠️ Support & Enhancements</h2>
 
 ### **A "Helpful Peer" Approach to Support**
-I want to be clear and polite: **I am a Project Manager, not a professional Groovy developer.** I have spent considerable time refining these drivers using AI to ensure they work perfectly in my own home. Because I am not a coder by trade, I cannot provide traditional technical support or "hotfixes" for unique environment issues, but fell free to contact me see "How to Contact Me" below.
+I want to be clear and polite: **I am a Project Manager, not a professional Groovy developer.** I have spent considerable time refining these drivers using AI to ensure they work perfectly in my own home. Because I am not a coder by trade, I cannot provide traditional technical support or "hotfixes" for unique environment issues, but feel free to contact me (see "How to Contact Me" below).
 
-**May I suggest, how to get help:**
+**May I suggest how to get help:**
 If you run into an error, I highly recommend doing what I do! 
 1. Copy the error from your Hubitat logs.
 2. Copy the relevant section of the driver code.
@@ -237,4 +242,9 @@ This driver overhaul was a collaborative effort between a human **Project Manage
 
 | Version | Date | Changes |
 | :--- | :--- | :--- |
-| **1.0.0** | 2026-03-20 | **Initial Production Documentation.** Comprehensive guide covering Parent/Child command structures, telemetry calibration, and AI-assisted development disclaimers. |
+| **1.0.5** | 2026-04-25 | Added troubleshooting step for Pulse 2 Hub power loss: click `Initialize` on parent device to reconnect. |
+| 1.0.4 | 2026-04-07 | Corrected preference defaults; added notes for non‑functional commands; updated child driver command table; marked `Auto-Revert Debug` as optional. |
+| 1.0.3 | 2026-04-05 | Added Auto-Revert Debug, removed duplicate commands. |
+| 1.0.2 | 2026-04-05 | Added Request Battery Status and Auto-Revert Debug. |
+| 1.0.1 | 2026-04-05 | Added Battery Offset. |
+| **1.0.0** | 2026-03-20 | Initial production documentation. |
