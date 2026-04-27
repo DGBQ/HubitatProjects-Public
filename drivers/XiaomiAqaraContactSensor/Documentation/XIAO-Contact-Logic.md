@@ -10,7 +10,7 @@
 ## 1. Project Context & Technical Philosophy
 
 ### 1.1 The Need for a Specialized Driver
-The original universal driver by **Jonathan Michaelsen** supported dozens of Xiaomi sensors (motion, vibration, weather, buttons, water leak) but included unnecessary capabilities and code paths that added complexity and potential failure points for a simple contact sensor. The IKEA Parasoll driver by **Dan Danache** introduced a modern framework with health checks and structured logging.
+The original universal driver by **Jonathan Michaelsen** supported dozens of Xiaomi sensors (motion, vibration, weather, buttons, water leak) but included unnecessary capabilities and code paths that added complexity and potential failure points for a simple contact sensor. The IKEA Parasoll driver by **Dan Danache** introduced a modern framework with health checks, ping commands, and structured logging.
 
 This driver merges the best of both: it retains **proprietary Xiaomi Zigbee parsing** (for sensors that do not use standard clusters) while adopting the **IKEA driver’s robust framework** – including health status tracking, configurable logging, and contact state inversion. All unrelated device code has been stripped away, leaving a lean, reliable driver that does one thing well: reporting open/closed state and battery level.
 
@@ -26,9 +26,11 @@ Because the sensor is often asleep, commands like `Refresh` may fail unless the 
 To provide confidence that a sensor is still operational, the driver implements a **Health Check** capability:
 - Every hour, the driver checks the timestamp of the last received Zigbee message (`state.lastRx`).
 - If no message has been received in the last 12 hours, the `healthStatus` attribute is set to `offline`.
-- As soon as any message arrives (contact change or battery report), the status returns to `online`.
+- As soon as any message arrives (contact change, battery report, or a successful ping), the status returns to `online`.
 
 This allows users to create automations that alert them when a sensor goes offline (e.g., battery dead or out of range).
+
+> **Note:** The official `HealthCheck` capability has been removed from the driver metadata to eliminate the stray "Ping" button. The custom `healthStatus` attribute and the `healthCheck()` method remain fully functional – health monitoring is unchanged.
 
 ---
 
@@ -51,7 +53,8 @@ These inputs allow the user to tailor logging and contact interpretation.
 
 | Preference | Format | Default | Description |
 | :--- | :--- | :--- | :--- |
-| **Log verbosity** | Enum (`1`, `2`, `3`, `4`) | `1` | `1` = Debug (log everything), `2` = Info (important events), `3` = Warning, `4` = Error. Debug mode automatically reverts to Info after 30 minutes to prevent log clutter. |
+| **Log verbosity** | Enum (`1`, `2`, `3`, `4`) | `1` | `1` = Debug (log everything), `2` = Info (important events), `3` = Warning, `4` = Error. |
+| **Auto-Revert Debug** | Boolean | `true` | When enabled, Debug logging automatically turns off after 30 minutes. Disable to keep debug on indefinitely (for extended troubleshooting). |
 | **Invert contact state** | Boolean | `false` | When enabled, swaps `open` and `closed` reports. Useful if the sensor is physically installed backwards (magnet on the door frame, sensor on the moving part). |
 
 No other preferences are required. The driver automatically configures reporting intervals and bindings during `configure()`.
@@ -116,7 +119,7 @@ This distinction is not used by most users but is available for advanced debuggi
 If the driver is updated and `state.lastCx` does not match `DRIVER_VERSION`, the driver automatically schedules a `configure()` after 1.5 seconds. This ensures new bindings or reporting configurations are applied without user intervention.
 
 ### 7.2 Debug Log Auto‑Revert
-To prevent performance degradation from excessive logging, when `logLevel = 1` (Debug), the driver schedules `logsOff()` to run after 30 minutes. That method changes the preference to `2` (Info) and logs a notice. The user can manually set it back to Debug if needed.
+To prevent performance degradation from excessive logging, when `logLevel = 1` (Debug) and `autoRevertDebug = true`, the driver schedules `logsOff()` to run after 30 minutes. That method changes the preference to `2` (Info) and logs a notice. If `autoRevertDebug` is disabled, debug remains on until manually turned off.
 
 ### 7.3 Battery Percentage Guard
 The driver clamps calculated battery percentage between `0` and `100`. Invalid values (e.g., `0xFF` from a missing battery attribute) are ignored with a warning log.
@@ -146,6 +149,6 @@ Other Xiaomi sensors (motion, vibration, weather, buttons, water leak) will **no
 
 - **Maintainer:** David Ball‑Quenneville (DGBQ)
 - **Lineage:** Based on the universal driver by Jonathan Michaelsen (Xiaomi Aqara Mijia Sensors) and the IKEA Parasoll driver structure by Dan Danache.
-- **Driver Version:** 1.0.8
-- **Document Version:** 1.0.1
+- **Driver Version:** 1.0.11
+- **Document Version:** 1.0.2
 - **Status:** Stable – tested with MCCGQ11LM (AS006CNW01) and lumi.sensor_magnet.

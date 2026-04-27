@@ -2,9 +2,9 @@
 ### _Quick Start, Installation & Configuration_
 
 ## 🔢 Version Control
-**Document Control:** 1.0.1  
+**Document Control:** 1.0.2  
 **Current Status:** Stable  
-- **Driver:** `XiaomiAqaraContactSensor-DGBQ.groovy` (v1.0.8)  
+- **Driver:** `XiaomiAqaraContactSensor-DGBQ.groovy` (v1.0.11)  
 **Maintenance Lead:** David Ball-Quenneville (DGBQ)  
 **Original Developers:** Jonathan Michaelsen (Xiaomi Aqara Mijia driver), Dan Danache (IKEA Parasoll driver structure)
 
@@ -55,6 +55,7 @@ This guide will ensure your Xiaomi contact sensor pairs correctly and communicat
 2. Click **Configure** (this sets up Zigbee bindings and reporting intervals).
 3. Under **Preferences**, adjust as desired:
    - **Log verbosity:** Default `Debug` is fine for testing; change to `Info` for daily use.
+   - **Auto-Revert Debug:** When enabled (default), Debug logging automatically turns off after 30 minutes. Disable to keep debug on indefinitely.
    - **Invert contact state:** Check if your sensor is installed backwards (reports open as closed).
 4. Click **Save Preferences**.
 
@@ -67,7 +68,7 @@ This guide will ensure your Xiaomi contact sensor pairs correctly and communicat
 <h2 id="driver-reference">⚙️ Driver: Command & Configuration Reference</h2>
 
 ### **Xiaomi Aqara Contact Sensor (Standalone)**
-This is a **standalone driver** – no parent/child relationship is required. It communicates directly with the Zigbee sensor. The driver implements **ContactSensor**, **Battery**, and **HealthCheck** capabilities, ensuring compatibility with Hubitat dashboards, Rule Machine, and Alexa/Google Home (via contact sensor capability).
+This is a **standalone driver** – no parent/child relationship is required. It communicates directly with the Zigbee sensor. The driver implements **ContactSensor**, **Battery**, and (custom) **HealthCheck** capabilities, ensuring compatibility with Hubitat dashboards, Rule Machine, and Alexa/Google Home (via contact sensor capability).
 
 ---
 
@@ -79,6 +80,8 @@ Commands are manual actions triggered within the Hubitat interface to interact w
 | **`Configure`** | Sets up Zigbee bindings and reporting intervals (battery every 5 hours, contact on change). | Run after pairing or if the sensor stops reporting. |
 | **`Refresh`** | Reads the current contact state and battery percentage. | **Wake‑sensitive:** Press the sensor’s button or open/close the contact immediately before clicking. |
 
+> **Note:** There is no `Ping` command – it is not useful for battery‑powered sleepy sensors and has been removed.
+
 ---
 
 ### **Preferences**
@@ -87,9 +90,10 @@ Preferences define the logging and behavior of the driver.
 | Preference | Detail | Requirement | Default |
 | :--- | :--- | :--- | :--- |
 | **Log verbosity** | Select level: `Debug` (log everything), `Info` (important events), `Warning`, `Error`. | Optional | **Debug** |
+| **Auto-Revert Debug** | When enabled (default), Debug logging automatically turns off after 30 minutes. Disable to keep debug on indefinitely. | Optional | **Enabled** |
 | **Invert contact state** | Swaps `open` and `closed` reports. | Optional | **Off** |
 
-> **Note:** Debug logging automatically reverts to `Info` after 30 minutes to prevent log clutter. There is no separate auto‑revert preference; this is hardcoded behavior.
+> **Note:** The `HealthCheck` capability has been removed from the driver metadata – this only removes the stray "Ping" button from the UI. The custom `healthStatus` attribute and hourly health checks remain fully functional.
 
 ---
 
@@ -101,7 +105,7 @@ Current States provide live telemetry used for Dashboards, Rule Machine, and Ale
 | **`contact`** | Primary door/window state. | `open`, `closed` |
 | **`battery`** | Calculated charge percentage. | 0–100% |
 | **`lastBattery`** | Timestamp of last battery report. | Date/time |
-| **`healthStatus`** | Device reachability indicator. | `online`, `offline`, `unknown` |
+| **`healthStatus`** | Device reachability indicator (custom, no Ping button). | `online`, `offline`, `unknown` |
 | **`checkInterval`** | Frequency of health checks. | 3600 seconds (hardcoded) |
 | **`networkRejoinCount`** | Number of times device rejoined Zigbee mesh. | Integer |
 
@@ -169,5 +173,6 @@ This driver was refined through a collaborative effort between a human **Project
 
 | Version | Date | Changes |
 | :--- | :--- | :--- |
-| **1.0.1** | 2026-04-25 | Removed all references to the `ping` command (removed from driver in v1.0.2). Updated driver version to v1.0.8. |
+| **1.0.2** | 2026-04-27 | Updated for driver v1.0.11: added Auto-Revert Debug preference, removed HealthCheck capability (no more stray "Ping" button). Preserved all existing content. |
+| **1.0.1** | 2026-04-25 | Updated for driver v1.0.10; clarified `lastTx` behaviour. |
 | **1.0.0** | 2026-04-24 | Initial documentation – stripped universal driver, added health check, log levels, contact inversion, network rejoin count. |

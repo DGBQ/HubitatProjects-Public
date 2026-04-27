@@ -2,9 +2,9 @@
 ### _A Clean, Reliable Driver for Zigbee Contact Sensors (MCCGQ11LM / AS006CNW01)_
 
 ## 🔢 Version Control
-**Document Control:** 1.0.0  
+**Document Control:** 1.0.2  
 **Current Status:** Stable  
-- **Driver:** `XiaomiAqaraContactSensor-DGBQ.groovy`  
+- **Driver:** `XiaomiAqaraContactSensor-DGBQ.groovy` (v1.0.11)  
 **Maintenance Lead:** David Ball-Quenneville (DGBQ)  
 **Original Developers:** Jonathan Michaelsen (Xiaomi Aqara Mijia driver), Dan Danache (IKEA Parasoll driver structure)
 
@@ -41,12 +41,13 @@ This driver combines the best of both: it retains the **proprietary Xiaomi Zigbe
 - Stripped out all capabilities and code for motion, vibration, temperature, humidity, pressure, water leak, and button devices.
 - Removed virtual commands (`open`, `closed`, `push`, `hold`, etc.) that do not apply to a contact sensor.
 - Removed the `ping` command (not useful for battery‑powered sleepy sensors).
+- Removed the `HealthCheck` capability – this eliminates the stray "Ping" button in the UI, but the custom `healthStatus` attribute and hourly health monitoring remain fully functional.
 
 ### **Added Reliability Features**
 - **Health Check:** Automatically tracks `lastRx` (last received message) and sets `healthStatus` to `online`, `offline`, or `unknown`. Scheduled checks run every hour; marks offline after 12 hours of no communication.
 - **Network Rejoin Count:** Tracks how many times the device rejoins the Zigbee mesh, useful for diagnosing connectivity issues.
 - **Contact State Inversion:** Preference to swap `open` and `closed` if the sensor is installed backwards.
-- **Log Verbosity Control:** Choose between Debug, Info, Warning, or Error logging. Debug mode auto‑reverts to Info after 30 minutes.
+- **Log Verbosity Control:** Choose between Debug, Info, Warning, or Error logging. Debug mode auto‑reverts to Info after 30 minutes (can be disabled with the `Auto-Revert Debug` preference).
 
 ### **Preserved Essential Xiaomi Handling**
 - Maintains proprietary `FF01`/`FF02` attribute parsing for devices that do not use standard Zigbee clusters for battery and contact reporting.
@@ -75,6 +76,7 @@ No parent/child relationship is required – this is a standalone device driver.
 
 ### **Preferences**
 - **Log verbosity:** Select level (Debug logs everything; Info is recommended for daily use).
+- **Auto-Revert Debug:** When enabled (default), Debug logging automatically turns off after 30 minutes. Disable to keep debug on indefinitely for extended troubleshooting.
 - **Invert contact state:** Check if you want `open` reported as `closed` and vice versa.
 
 ### **Commands**
@@ -109,4 +111,5 @@ This driver was refined with the assistance of **Gemini AI** to audit, restructu
 
 | Version | Date | Changes |
 | :--- | :--- | :--- |
+| **1.0.2** | 2026-04-27 | Updated for driver v1.0.11: added Auto-Revert Debug preference, removed HealthCheck capability (no more stray "Ping" button). Preserved all existing content. |
 | **1.0.0** | 2026-04-24 | Initial release – stripped universal driver, added health check, log levels, contact inversion, and network rejoin count. |
