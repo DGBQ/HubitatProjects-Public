@@ -2,9 +2,9 @@
 ### _Quick Start, Installation & Configuration_
 
 ## 🔢 Version Control
-**Document Control:** 1.0.2  
+**Document Control:** 1.0.3  
 **Current Status:** Stable  
-- **Driver:** `XiaomiAqaraContactSensor-DGBQ.groovy` (v1.0.11)  
+- **Driver:** `XiaomiAqaraContactSensor-DGBQ.groovy` (v1.0.17)  
 **Maintenance Lead:** David Ball-Quenneville (DGBQ)  
 **Original Developers:** Jonathan Michaelsen (Xiaomi Aqara Mijia driver), Dan Danache (IKEA Parasoll driver structure)
 
@@ -82,6 +82,8 @@ Commands are manual actions triggered within the Hubitat interface to interact w
 
 > **Note:** There is no `Ping` command – it is not useful for battery‑powered sleepy sensors and has been removed.
 
+> **Note:** After clicking **Configure**, the `healthStatus` may temporarily show `unknown` until the sensor wakes and reports (introduced in v1.0.17). This is normal and resolves automatically.
+
 ---
 
 ### **Preferences**
@@ -104,9 +106,9 @@ Current States provide live telemetry used for Dashboards, Rule Machine, and Ale
 | :--- | :--- | :--- |
 | **`contact`** | Primary door/window state. | `open`, `closed` |
 | **`battery`** | Calculated charge percentage. | 0–100% |
+| **`batteryVoltage`** | Voltage in volts (e.g., 3.06V) | Volts |
 | **`lastBattery`** | Timestamp of last battery report. | Date/time |
 | **`healthStatus`** | Device reachability indicator (custom, no Ping button). | `online`, `offline`, `unknown` |
-| **`checkInterval`** | Frequency of health checks. | 3600 seconds (hardcoded) |
 | **`networkRejoinCount`** | Number of times device rejoined Zigbee mesh. | Integer |
 
 ---
@@ -173,6 +175,7 @@ This driver was refined through a collaborative effort between a human **Project
 
 | Version | Date | Changes |
 | :--- | :--- | :--- |
+| **1.0.3** | 2026-05-03 | Updated for driver v1.0.17: added `batteryVoltage` attribute, removed `checkInterval`, added note about health status after configure. |
 | **1.0.2** | 2026-04-27 | Updated for driver v1.0.11: added Auto-Revert Debug preference, removed HealthCheck capability (no more stray "Ping" button). Preserved all existing content. |
 | **1.0.1** | 2026-04-25 | Updated for driver v1.0.10; clarified `lastTx` behaviour. |
 | **1.0.0** | 2026-04-24 | Initial documentation – stripped universal driver, added health check, log levels, contact inversion, network rejoin count. |

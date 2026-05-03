@@ -30,7 +30,7 @@ To provide confidence that a sensor is still operational, the driver implements 
 
 This allows users to create automations that alert them when a sensor goes offline (e.g., battery dead or out of range).
 
-> **Note:** The official `HealthCheck` capability has been removed from the driver metadata to eliminate the stray "Ping" button. The custom `healthStatus` attribute and the `healthCheck()` method remain fully functional – health monitoring is unchanged.
+> **Note:** The official `HealthCheck` capability has been removed from the driver metadata to eliminate the stray "Ping" button. The custom `healthStatus` attribute and the `healthCheck()` method remain fully functional – health monitoring is unchanged. After clicking **Configure**, the `healthStatus` may temporarily show `unknown` until the sensor wakes and reports (introduced in v1.0.17). This is normal and resolves automatically.
 
 ---
 
@@ -44,6 +44,8 @@ The following commands are available on the device page. All commands are synchr
 | **`refresh()`** | Reads the current contact state and battery percentage. | Issues `readAttribute` for `0x0006` (OnOff) and `0x0001` (BatteryPercentage). Logs a reminder if the device is battery‑powered: *“Click Refresh immediately after opening/closing the contact to wake the device!”* |
 
 > **Note:** No virtual commands (e.g., `open`, `closed`, `push`) are exposed because the sensor is a passive device. It does not accept commands to change its physical state. The `ping` command is not supported (removed in v1.0.2 as it is not useful for battery‑powered sleepy sensors).
+
+> **Note:** After clicking **Configure**, the `healthStatus` may temporarily show `unknown` until the sensor wakes and reports (introduced in v1.0.17). This is normal and resolves automatically.
 
 ---
 
@@ -69,9 +71,9 @@ The driver exposes the following attributes for use in dashboards, Rule Machine,
 | :--- | :--- | :--- | :--- |
 | **`contact`** | String | `open`, `closed` | The primary door/window state. This is the main attribute used for automations. |
 | **`battery`** | Integer | 0–100% | Battery charge percentage, derived from voltage (2.0V = 0%, 3.0V = 100%). Reported by the sensor periodically (every 5 hours via standard cluster) or via proprietary Xiaomi data. |
+| **`batteryVoltage`** | Number | Volts (e.g., 3.06V) | Battery voltage in volts, converted from millivolts. |
 | **`lastBattery`** | Date | ISO timestamp | The date and time of the last battery report. Used to know how fresh the battery reading is. |
 | **`healthStatus`** | String | `online`, `offline`, `unknown` | Indicates whether the sensor has communicated recently. `online` means a message was received within the last 12 hours. |
-| **`checkInterval`** | Integer | 3600 seconds | Hardcoded interval for the health check schedule (every hour). |
 | **`networkRejoinCount`** | Integer | Counter | Increments each time the sensor announces a rejoin to the Zigbee mesh (Device_annce message). Helps diagnose mesh stability issues. |
 
 ---
@@ -101,7 +103,7 @@ Xiaomi contact sensors can report data in two ways: **standard Zigbee clusters**
 
 ### 6.2 Proprietary Parsing Path (For Older Firmware)
 When standard clusters are not used, the driver extracts data from manufacturer‑specific attributes (`FF01` or `FF02`) using the patterns documented by the Hubitat community:
-- **Battery voltage:** Extracted from specific byte positions (e.g., `value[8..9] + value[6..7]` when followed by `21`). Converted to voltage (0.01V units) then to percentage.
+- **Battery voltage:** Extracted from specific byte positions (e.g., `value[8..9] + value[6..7]` when followed by `21`). Converted from millivolts (mV) to volts by dividing by 1000.
 - **Contact state:** Extracted from `6410` pattern in `FF01` or `060010` pattern in `FF02`. A value of `1` indicates open; `0` indicates closed.
 
 ### 6.3 Physical vs. Digital Event Flagging
@@ -149,6 +151,6 @@ Other Xiaomi sensors (motion, vibration, weather, buttons, water leak) will **no
 
 - **Maintainer:** David Ball‑Quenneville (DGBQ)
 - **Lineage:** Based on the universal driver by Jonathan Michaelsen (Xiaomi Aqara Mijia Sensors) and the IKEA Parasoll driver structure by Dan Danache.
-- **Driver Version:** 1.0.11
-- **Document Version:** 1.0.2
+- **Driver Version:** 1.0.17
+- **Document Version:** 1.0.3
 - **Status:** Stable – tested with MCCGQ11LM (AS006CNW01) and lumi.sensor_magnet.

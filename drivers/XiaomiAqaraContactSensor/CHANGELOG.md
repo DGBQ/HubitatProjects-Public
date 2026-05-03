@@ -1,5 +1,27 @@
 # Xiaomi Aqara Contact Sensor – CHANGELOG
 
+#### v1.0.17 - 2026-05-01 - David Ball-Quenneville
+- **Immediate health status update after `configure()`** – now sets `healthStatus` to `unknown` immediately after state clear (honest feedback until sensor reports).
+- **Improved proprietary contact logging** – only logs a contact change when the state actually changes.
+  - New log format: `Contact reported as open/closed (proprietary message)`.
+  - Repeated proprietary messages with the same contact state are logged as debug (not info), keeping logs clean.
+- **No functional changes** to contact, battery, voltage, or health check behaviour – same as v1.0.16.
+
+#### v1.0.16 - 2026-04-29 - David Ball-Quenneville
+- **Corrected battery voltage conversion** – raw value (millivolts) now divided by 1000.0 (floating‑point) to show volts correctly (e.g., 3.06V instead of 30.6V or 3V).
+- **Fixed integer division issue** – changed `voltageRaw / 1000` to `voltageRaw / 1000.0` to preserve decimal precision.
+- **Removed `checkInterval` event** – no longer appears in Current States, keeping the interface cleaner.
+- This version is stable for contact, battery percentage, and voltage.
+
+#### v1.0.15 - 2026-04-29 - (skipped – internal test only)
+#### v1.0.14 - 2026-04-29 - (skipped – version not released)
+#### v1.0.13 - 2026-04-29 - (skipped – internal test only)
+
+#### v1.0.12 - 2026-04-28 - David Ball-Quenneville
+- **Added `batteryVoltage` attribute** – reports raw voltage in volts (e.g., 3.01V) from proprietary `FF01`/`FF02` data.
+- **Percentage calculation unchanged** – battery percentage remains based on voltage (2.0V = 0%, 3.0V = 100%).
+- Initial voltage conversion used integer division (later corrected in v1.0.16). Some sensors may show incorrect voltage if they use a different unit scale.
+
 #### v1.0.11 - 2026-04-27 - David Ball-Quenneville
 - **Added Auto-Revert Debug preference** (`autoRevertDebug`, default `true`).
   - When enabled, debug logging (`logLevel = 1`) automatically turns off after 30 minutes.
@@ -87,4 +109,4 @@
 
 ---
 
-**Note:** Versions 1.0.9 is deprecated; v1.0.10 and v1.0.11 are the recommended stable releases. The driver is fully functional for contact reporting, battery monitoring, and health checks.
+**Note:** Versions 1.0.9 is deprecated; v1.0.10, v1.0.11, v1.0.16, and v1.0.17 are the recommended stable releases. v1.0.16 corrected voltage display, and v1.0.17 improved logging and health status after configure. The driver is fully functional for contact reporting, battery monitoring, and health checks.

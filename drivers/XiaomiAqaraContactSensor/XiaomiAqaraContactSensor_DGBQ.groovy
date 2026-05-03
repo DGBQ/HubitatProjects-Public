@@ -1,11 +1,13 @@
 /**
- *  Xiaomi Aqara Contact Sensor
+ *  Open-Meteo UV Index and Illuminance Tracker Plus
  *  Type: Standalone Driver
- *  Purpose: Represents a single door/window contact sensor. Receives and processes
- *           Zigbee messages from the Xiaomi Aqara contact sensor (MCCGQ11LM / AS006CNW01)
- *           and reports contact state, battery level, and health status.
+ *  Purpose: Creates an illuminance sensor from Open‑Meteo solar radiation data
+ *           and reports UV index (current + today + 5 future days) for the hub's
+ *           location. Supports custom location, day/night polling intervals,
+ *           API call limits, advanced retries, and auto‑reset.
  *
- *  Author: David Ball-Quenneville (maintainer, based on previous work by Jonathan Michaelsen and Dan Danache)
+ *  Original code by: Jon Wallace
+ *  Modified and maintained by: David Ball-Quenneville
  *  Copyright 2026 David Ball-Quenneville
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,348 +23,616 @@
  *  limitations under the License.
  *
  *  Revision History:
- *  v1.0.8 - 2026-04-25 - David Ball-Quenneville
- *    - Fixed version tracking: added state.lastCx = DRIVER_VERSION in updated().
- *    - Ensures version sync on every driver code save, not just on Configure.
- *
- *  v1.0.7 - 2026-04-25 - Fixed version tracking in configure().
- *  v1.0.6 - 2026-04-25 - Fixed nested list bug in configure().
- *  v1.0.5 - 2026-04-25 - Fixed configure() runIn delay.
- *  v1.0.4 - 2026-04-25 - Fixed attrInt conversion for contact parsing.
- *  v1.0.3 - 2026-04-25 - Fixed logLevel null errors.
- *  v1.0.2 - 2026-04-25 - Removed ping, added null checks.
- *  v1.0.1 - 2026-04-25 - Fixed null value parsing.
- *  v1.0.0 - 2026-04-24 - Initial release.
+ *  v2.1.8 - 2026-05-02 - David Ball-Quenneville
+ *    - Added user‑friendly descriptions to all commands and preferences.
+ *    - Included default values and required markers.
+ *    - No functional changes.
+ *  v2.1.7 - 2026-05-02 - Removed misleading "Forecast Days" preference, hardcoded 6‑day forecast.
+ *  v2.1.6 - 2026-05-02 - Extended max forecast days to 16 (preference only)
+ *  v2.1.5 - 2026-05-02 - Added forecast risk text attributes and rounding fix
+ *  v2.1.4 - 2026-05-02 - Removed syncDebugState and forecast auto‑fallback
+ *  v2.1.3 - 2026-05-02 - Added syncDebugState and forced state init
+ *  v2.1.2 - 2026-05-01 - Fixed NPEs and metadata access
+ *  v2.1.1 - 2026-05-01 - Added debug state variables
+ *  v2.1.0 - 2026-05-01 - Renamed forecast attributes, date format, resetApiCounters
+ *  v2.0.0 - 2026-05-01 - Major enhancement: forecast UV, anchored scheduling, custom location
+ *  v1.1.0 - 2026-05-01 - Fixed API fields, timezone parsing, scheduling bugs (David Ball-Quenneville)
+ *  v1.0.0 - 2026-04-30 - Initial release (Jon Wallace)
  */
 
-import groovy.transform.CompileStatic
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME = 'Xiaomi Aqara Contact Sensor'
-@Field static final String DRIVER_VERSION = '1.0.8'
-
-// Fields for capability.HealthCheck
-import groovy.time.TimeCategory
-
-@Field static final Map<String, String> HEALTH_CHECK = [
-    'schedule': '0 0 0/1 ? * * *', // Check every hour
-    'threshold': '43200' // Mark offline if no message in last 12 hours
-]
+@Field static final String DRIVER_VERSION = "2.1.8"
 
 metadata {
-    definition (
-        name: "Xiaomi Aqara Contact Sensor",
+    definition(
+        name: "Open-Meteo UV Index and Illuminance Tracker Plus",
         namespace: "DGBQ",
         author: "David Ball-Quenneville",
-        version: "1.0.8",
-        vid: "generic-contact",
-        importUrl: ""
+        version: DRIVER_VERSION,
+        vid: "generic-illuminance"
     ) {
-        capability "Configuration"
-        capability "Refresh"
+        capability "IlluminanceMeasurement"
         capability "Sensor"
-        capability "ContactSensor"
-        capability "Battery"
-        capability "HealthCheck"
+        capability "Refresh"
 
-        // Attributes
-        attribute "healthStatus", "enum", ["offline", "online", "unknown"]
-        attribute "lastBattery", "date"
-        attribute "networkRejoinCount", "number"
+        command "refresh", [[name: "Refresh Now", description: "Manual Sync: Triggers an immediate update of current UV, illuminance, and forecast data. Does not affect the anchored day/night schedule."]]
+        command "resetDefaults", [[name: "Reset Defaults", description: "Factory Reset: Restores all driver preferences to their original default values. Use this to start over if settings become misconfigured."]]
+        command "resetApiCounters", [[name: "Reset API Counters", description: "Reset API Counter: Sets today's API call count back to zero without changing any other settings. Useful when you've increased the daily limit mid‑day."]]
 
-        // Fingerprints for Xiaomi contact sensors
-        fingerprint profileId:"0104", inClusters:"0000,0003,FFFF,0006", outClusters:"0000,0004,FFFF", manufacturer:"LUMI", model:"lumi.sensor_magnet.aq2", deviceJoinName:"Xiaomi Aqara Contact Sensor"
-        fingerprint profileId:"0104", inClusters:"0000,0003,FFFF,0019", outClusters:"0000,0004,0003,0006,0008,0005,0019", manufacturer:"LUMI", model:"lumi.sensor_magnet", deviceJoinName:"Xiaomi Mijia Door and Window Sensor"
+        // Core attributes
+        attribute "uvIndex", "number"
+        attribute "uvRisk", "string"
+        attribute "uvIndexClearSky", "number"
+        attribute "solarRadiation", "number"
+        attribute "illuminance", "number"
+        attribute "lastUpdated", "string"
+
+        // Status & management
+        attribute "apiStatus", "string"
+        attribute "nextUpdate", "string"
+        attribute "lastPollDuration", "number"
+        attribute "apiCallsToday", "number"
+
+        // Forecast UV (numeric) – always today + 5 future days
+        attribute "forecastUvToday", "number"
+        attribute "forecastUvTomorrow", "number"
+        attribute "forecastUvDay2", "number"
+        attribute "forecastUvDay3", "number"
+        attribute "forecastUvDay4", "number"
+        attribute "forecastUvDay5", "number"
+
+        // Forecast UV risk (text)
+        attribute "forecastUvRiskToday", "string"
+        attribute "forecastUvRiskTomorrow", "string"
+        attribute "forecastUvRiskDay2", "string"
+        attribute "forecastUvRiskDay3", "string"
+        attribute "forecastUvRiskDay4", "string"
+        attribute "forecastUvRiskDay5", "string"
+    }
+
+    preferences {
+        section("<b>Location Configuration</b>") {
+            input name: "useCustomLocation", type: "bool", title: "Use Custom Location?", description: "Enable to manually specify a location instead of using the hub's built‑in coordinates. This allows multiple driver instances for different places (e.g., home, cottage). (Default: false)", defaultValue: false, submitOnChange: true
+            if (useCustomLocation) {
+                input name: "customLat", type: "text", title: "Latitude", description: "*Required* when Use Custom Location is enabled. Latitude in decimal degrees (e.g., 43.6532). Positive for north, negative for south.", required: true
+                input name: "customLong", type: "text", title: "Longitude", description: "*Required* when Use Custom Location is enabled. Longitude in decimal degrees (e.g., -79.3832). Positive for east, negative for west.", required: true
+                input name: "customLocName", type: "text", title: "Location Name", description: "Optional friendly name for this location (appears in logs and state variables). Helps distinguish multiple driver instances. (Default: \"Custom\" if left blank)", required: false
+            }
+        }
+
+        section("<b>Polling Schedule</b>") {
+            input name: "daytimeStart", type: "time", title: "Daytime Start", description: "*Required* The time of day when daytime polling intervals begin. At this time, the driver forces an immediate poll and switches to the daytime interval. (Default: 06:00)", defaultValue: "06:00", required: true
+            input name: "nighttimeStart", type: "time", title: "Nighttime Start", description: "*Required* The time of day when nighttime polling intervals begin. At this time, the driver forces an immediate poll and switches to the nighttime interval. (Default: 22:00)", defaultValue: "22:00", required: true
+            input name: "dayInterval", type: "enum", title: "Daytime Poll Interval", description: "*Required* How often the driver polls the API during daytime hours. Shorter intervals give fresher data but consume more API calls. (Default: 30 minutes)", defaultValue: "30", options: [
+                "10":"10 min","15":"15 min","30":"30 min","60":"1 hour","120":"2 hours","180":"3 hours",
+                "240":"4 hours","300":"5 hours","360":"6 hours","420":"7 hours","480":"8 hours","540":"9 hours"
+            ], required: true
+            input name: "nightInterval", type: "enum", title: "Nighttime Poll Interval", description: "*Required* How often the driver polls the API during nighttime hours. Longer intervals save API calls when UV is low. (Default: 2 hours)", defaultValue: "120", options: [
+                "10":"10 min","15":"15 min","30":"30 min","60":"1 hour","120":"2 hours","180":"3 hours",
+                "240":"4 hours","300":"5 hours","360":"6 hours","420":"7 hours","480":"8 hours","540":"9 hours"
+            ], required: true
+        }
+
+        section("<b>Usage Limits & Error Handling</b>") {
+            input name: "maxCallsPerDay", type: "number", title: "Max API Calls Per Day", description: "*Required* Safety cap on the total number of API calls allowed in a 24‑hour period. Counter resets at midnight. (Default: 25)", defaultValue: 25, range: "1..200", required: true
+            input name: "autoResetMidnight", type: "bool", title: "Auto‑Reset at Midnight", description: "When enabled, automatically clears error counters and the API call count at midnight. Keeps the driver fresh for the next day. (Default: true)", defaultValue: true
+            input name: "enableAdvancedRetries", type: "bool", title: "Enable Advanced Retries", description: "Enable this to customise how many times the driver retries a failed API call and how long it waits between retries. (Default: false)", defaultValue: false, submitOnChange: true
+            if (enableAdvancedRetries) {
+                input name: "maxRetriesPref", type: "number", title: "Max Retries", description: "(Only if advanced retries enabled) Number of times to retry a failed API call before giving up. (Default: 3)", defaultValue: 3, range: "1..10"
+                input name: "maxBackoffPref", type: "number", title: "Max Backoff (seconds)", description: "(Only if advanced retries enabled) Maximum wait time in seconds between retries. Exponential backoff builds up to this limit. (Default: 3600 seconds / 1 hour)", defaultValue: 3600, range: "60..86400"
+            }
+        }
+
+        section("<b>Display Settings</b>") {
+            input name: "dateTimeFormat", type: "enum", title: "Date/Time Format", description: "*Required* Choose how dates and times appear in “Last Updated”, “Next Update”, and other timestamp attributes. (Default: MM/DD/YYYY AM/PM)", defaultValue: "MM/DD/YYYY AM/PM", options: [
+                "MM/DD/YYYY AM/PM", "YYYY-MM-DD (24-hour)", "YYYY-MM-DD AM/PM",
+                "MM/DD/YYYY (24-hour)", "DD/MM/YYYY (24-hour)", "DD/MM/YYYY AM/PM",
+                "Mon DD, YYYY hh:MM AM/PM", "Day, Mon DD, YYYY hh:MM AM/PM"
+            ], required: true
+        }
+
+        section("<b>Logging & Debugging</b>") {
+            input name: "logVerbosity", type: "enum", title: "Log Verbosity", description: "*Required* Controls how much detail is written to the log. “ERROR” shows only critical issues, “DEBUG” shows everything. (Default: INFO)", defaultValue: "INFO", options: ["ERROR","WARN","INFO","DEBUG"], required: true
+            input name: "autoRevertDebug", type: "bool", title: "Auto‑Revert Debug", description: "When enabled, automatically changes logging back from DEBUG to INFO after 30 minutes to prevent excessive log entries. (Default: true)", defaultValue: true
+        }
+
+        section("<b>Advanced (Thresholds)</b>") {
+            input name: "luxConversionFactor", type: "number", title: "Lux per W/m²", description: "Estimated lux per W/m² of solar radiation. The default (120) works well for outdoor conditions. Lower values reduce estimated illuminance. (Default: 120)", defaultValue: 120, range: "1..200"
+            input name: "minIlluminanceChange", type: "number", title: "Min illuminance change (lux)", description: "Minimum change in lux required to trigger a new illuminance event. Reduces unnecessary updates when illuminance fluctuates slightly. (Default: 100)", defaultValue: 100, range: "0..100000"
+            input name: "minUvIndexChange", type: "number", title: "Min UV index change", description: "Minimum change in UV index required to trigger a new UV event. Prevents constant updates when UV changes by less than this amount. (Default: 0.1)", defaultValue: 0.1, range: "0..20"
+        }
     }
 }
 
-preferences {
-    input(
-        name:"logLevel", type:"enum", title:"Log verbosity", required:true,
-        description:"Select what messages appear in the Logs section",
-        options:["1":"Debug - log everything", "2":"Info - log important events", "3":"Warning - log events that require attention", "4":"Error - log errors"],
-        defaultValue:"1"
-    )
-    input(
-        name:"swapOpenClosed", type:"bool", title:"Invert contact state", required:true,
-        description:"Swaps 'open' and 'closed' status reports",
-        defaultValue:false
-    )
+// ====== Lifecycle ======
+
+def installed() {
+    log.info "${metadata.definition.name} v${DRIVER_VERSION} installed."
+    initState()
+    updateStateWithSettings()
+    initialize()
 }
 
-// ===================================================================
-// Lifecycle methods
-// ===================================================================
-
-void installed() {
-    if (logLevel == null) device.updateSetting("logLevel", [value:"1", type:"enum"])
-    log_warn "Installing device ..."
-    state.lastCx = DRIVER_VERSION
-}
-
-void updated() {
-    if (logLevel == null) device.updateSetting("logLevel", [value:"1", type:"enum"])
-    log_info "Saving preferences ..."
-    
-    // FIX: Immediately sync the version state on every driver code save
-    state.lastCx = DRIVER_VERSION
-    
+def updated() {
+    log.info "Settings updated."
     unschedule()
-    if (logLevel == "1") runIn 1800, "logsOff"
-    schedule(HEALTH_CHECK.schedule, "healthCheck")
-    runInMillis(1000, "configureApply")
+    def oldMax = state.previousMaxCalls ?: 25
+    def newMax = safeToInteger(settings.maxCallsPerDay, 25)
+    if (newMax > oldMax) {
+        logInfo "Max calls increased from ${oldMax} to ${newMax}. Resetting call counter."
+        state.apiCallsToday = 0
+        sendEvent(name: "apiCallsToday", value: 0)
+    }
+    state.previousMaxCalls = newMax
+
+    if (settings.logVerbosity == "DEBUG" && settings.autoRevertDebug) runIn(1800, "revertDebug")
+
+    sendEvent(name: "apiStatus", value: "Initialized")
+    sendEvent(name: "apiCallsToday", value: state.apiCallsToday ?: 0)
+
+    updateStateWithSettings()
+    scheduleTransitionJobs()
+    refresh()
 }
 
-void logsOff() {
-    log_info "Automatically reverting log level to Info"
-    device.updateSetting("logLevel", [value:"2", type:"enum"])
+def initialize() {
+    sendEvent(name: "apiStatus", value: "Initialized")
+    checkMidnightReset()
+    updateStateWithSettings()
+    scheduleTransitionJobs()
+    refresh()
 }
 
-// ===================================================================
-// Capability commands
-// ===================================================================
-
-void configure() {
-    if (logLevel == null) device.updateSetting("logLevel", [value:"1", type:"enum"])
-    log_warn "Configuring device ..."
-    if (device.deviceNetworkId == null) { log_error "deviceNetworkId null"; return }
-    if (device.zigbeeId == null) { log_error "zigbeeId null – re-pair device"; return }
-
-    // Save any important state before clearing (none needed)
-    state.clear()
-    // Always set version to current driver version
-    state.lastCx = DRIVER_VERSION
-    state.lastTx = 0
-    state.lastRx = 0
-
-    List<String> cmds = []
-    cmds += "he raw 0x${device.deviceNetworkId} 0x01 0x01 0x0003 {014300 3C00}"
-    cmds.addAll(refresh(true))
-    sendZigbee(cmds)
-    // Wait 5 seconds for the above commands to be sent, then run configureApply
-    runIn(5, "configureApply")
+private void initState() {
+    if (state.driverVersion == null) state.driverVersion = DRIVER_VERSION
+    if (state.apiCallsToday == null) state.apiCallsToday = 0
+    if (state.consecutiveErrors == null) state.consecutiveErrors = 0
+    if (state.currentRetry == null) state.currentRetry = 0
+    if (state.lastResetDate == null) state.lastResetDate = new Date().format("yyyy-MM-dd", location.timeZone)
+    if (state.previousMaxCalls == null) state.previousMaxCalls = safeToInteger(settings.maxCallsPerDay, 25)
+    
+    // Debug state variables
+    if (state.currentLat == null) state.currentLat = null
+    if (state.currentLong == null) state.currentLong = null
+    if (state.locationName == null) state.locationName = ""
+    if (state.maxRetries == null) state.maxRetries = 3
+    if (state.maxBackoff == null) state.maxBackoff = 3600
+    if (state.preferencesValid == null) state.preferencesValid = false
 }
 
-void configureApply() {
-    if (logLevel == null) device.updateSetting("logLevel", [value:"1", type:"enum"])
-    log_info "Finishing device configuration ..."
-    if (device.deviceNetworkId == null || device.zigbeeId == null) {
-        log_error "Missing identifiers"
+def revertDebug() {
+    log.info "Auto-reverting log verbosity to INFO."
+    device.updateSetting("logVerbosity", [value: "INFO", type: "enum"])
+}
+
+def resetDefaults() {
+    logInfo "Resetting all preferences to defaults."
+    device.updateSetting("useCustomLocation", [value: false, type: "bool"])
+    device.updateSetting("customLat", [value: "", type: "text"])
+    device.updateSetting("customLong", [value: "", type: "text"])
+    device.updateSetting("customLocName", [value: "", type: "text"])
+    device.updateSetting("daytimeStart", [value: "06:00", type: "time"])
+    device.updateSetting("nighttimeStart", [value: "22:00", type: "time"])
+    device.updateSetting("dayInterval", [value: "30", type: "enum"])
+    device.updateSetting("nightInterval", [value: "120", type: "enum"])
+    device.updateSetting("maxCallsPerDay", [value: 25, type: "number"])
+    device.updateSetting("autoResetMidnight", [value: true, type: "bool"])
+    device.updateSetting("enableAdvancedRetries", [value: false, type: "bool"])
+    device.updateSetting("maxRetriesPref", [value: 3, type: "number"])
+    device.updateSetting("maxBackoffPref", [value: 3600, type: "number"])
+    device.updateSetting("dateTimeFormat", [value: "MM/DD/YYYY AM/PM", type: "enum"])
+    device.updateSetting("logVerbosity", [value: "INFO", type: "enum"])
+    device.updateSetting("autoRevertDebug", [value: true, type: "bool"])
+    device.updateSetting("luxConversionFactor", [value: 120, type: "number"])
+    device.updateSetting("minIlluminanceChange", [value: 100, type: "number"])
+    device.updateSetting("minUvIndexChange", [value: 0.1, type: "number"])
+    state.apiCallsToday = 0
+    state.consecutiveErrors = 0
+    state.currentRetry = 0
+    sendEvent(name: "apiCallsToday", value: 0)
+    updateStateWithSettings()
+    unschedule()
+    scheduleTransitionJobs()
+    refresh()
+}
+
+def resetApiCounters() {
+    logInfo "Manual reset of API call counters."
+    state.apiCallsToday = 0
+    sendEvent(name: "apiCallsToday", value: 0)
+}
+
+def refresh() {
+    logDebug "Manual refresh triggered."
+    pollOpenMeteo()
+}
+
+// ====== Helper to update state variables for debugging ======
+
+private void updateStateWithSettings() {
+    state.driverVersion = DRIVER_VERSION
+    def coords = getCoordinates()
+    if (coords) {
+        state.currentLat = coords.lat
+        state.currentLong = coords.lon
+    } else {
+        state.currentLat = null
+        state.currentLong = null
+    }
+    state.locationName = settings.useCustomLocation ? (settings.customLocName ?: "Custom") : (location.name ?: "Hubitat Hub")
+    state.maxRetries = settings.enableAdvancedRetries ? (safeToInteger(settings.maxRetriesPref, 3)) : 3
+    state.maxBackoff = settings.enableAdvancedRetries ? (safeToInteger(settings.maxBackoffPref, 3600)) : 3600
+    state.preferencesValid = (coords != null)
+}
+
+private int safeToInteger(value, int defaultValue) {
+    if (value == null) return defaultValue
+    try {
+        return value.toString().toInteger()
+    } catch (e) {
+        return defaultValue
+    }
+}
+
+// ====== Scheduling (anchored) ======
+
+def scheduleTransitionJobs() {
+    unschedule("startDaytimePolling")
+    unschedule("startNighttimePolling")
+    if (settings.daytimeStart) schedule(settings.daytimeStart, "startDaytimePolling")
+    if (settings.nighttimeStart) schedule(settings.nighttimeStart, "startNighttimePolling")
+}
+
+def startDaytimePolling() {
+    logInfo "Daytime period started – forcing poll and resetting schedule."
+    pollOpenMeteo()
+    scheduleNextPoll()
+}
+
+def startNighttimePolling() {
+    logInfo "Nighttime period started – forcing poll and resetting schedule."
+    pollOpenMeteo()
+    scheduleNextPoll()
+}
+
+private Date getCurrentPeriodStart(Date now) {
+    boolean isDay = isDaytime(now)
+    if (isDay) return timeToday(settings.daytimeStart, location.timeZone)
+    Date todayDayStart = timeToday(settings.daytimeStart, location.timeZone)
+    if (now < todayDayStart) return timeToday(settings.nighttimeStart, location.timeZone) - 1
+    return timeToday(settings.nighttimeStart, location.timeZone)
+}
+
+private Date getNextPollTime(Date periodStart, int intervalMinutes, Date now) {
+    long intervalMillis = intervalMinutes * 60 * 1000L
+    long diff = now.time - periodStart.time
+    long intervalsPassed = diff / intervalMillis
+    long nextMillis = periodStart.time + (intervalsPassed + 1) * intervalMillis
+    if (nextMillis <= now.time) nextMillis = now.time + intervalMillis
+    return new Date(nextMillis)
+}
+
+def scheduleNextPoll() {
+    unschedule("pollOpenMeteo")
+    Date now = new Date()
+    int interval = (isDaytime(now) ? safeToInteger(settings.dayInterval, 30) : safeToInteger(settings.nightInterval, 120))
+    Date periodStart = getCurrentPeriodStart(now)
+    Date nextRun = getNextPollTime(periodStart, interval, now)
+    logDebug "Scheduling next poll at ${formatDateTime(nextRun)}"
+    runOnce(nextRun, "pollOpenMeteo")
+    sendEvent(name: "nextUpdate", value: formatDateTime(nextRun))
+}
+
+// ====== Main Polling Logic ======
+
+def pollOpenMeteo() {
+    logDebug "Polling Open‑Meteo API."
+    checkMidnightReset()
+
+    def coords = getCoordinates()
+    if (!coords) {
+        logError "No valid coordinates."
+        sendEvent(name: "apiStatus", value: "ERROR_NO_COORDS")
+        scheduleNextPoll()
         return
     }
-    String ep = (device.endpointId != null) ? device.endpointId : "01"
-    String nwk = device.deviceNetworkId
-    String ieee = device.zigbeeId
 
-    List<String> cmds = ["he raw 0x${nwk} 0x01 0x01 0x0003 {014300 3C00}"]
-    cmds += "zdo bind 0x${nwk} 0x${ep} 0x01 0x0001 {${ieee}} {}"
-    cmds += "he cr 0x${nwk} 0x${ep} 0x0001 0x0021 0x20 0x0000 0x4650 {02} {}"
-    cmds += "zdo bind 0x${nwk} 0x${ep} 0x01 0x0006 {${ieee}} {}"
-    cmds += "he cr 0x${nwk} 0x${ep} 0x0006 0x0000 0x10 0x0000 0x0001 {01} {}"
-
-    sendEvent(name:"healthStatus", value:"online", descriptionText:"Health status initialized to online")
-    sendEvent(name:"checkInterval", value:3600, unit:"second", descriptionText:"Health check interval is 3600 seconds")
-
-    cmds += zigbee.readAttribute(0x0000, [0x0001, 0x0004, 0x0005])
-    cmds += "he raw 0x${nwk} 0x01 0x01 0x0003 {014300 0000}"
-    sendZigbee(cmds)
-}
-
-List<String> refresh(boolean auto = false) {
-    if (auto) log_debug "Refreshing device state (auto) ..."
-    else log_info "Refreshing device state ..."
-    if (!auto) {
-        log_warn "Click 'Refresh' immediately after opening/closing the contact to wake the device!"
-    }
-    return [zigbee.readAttribute(0x0006, 0x0000), zigbee.readAttribute(0x0001, 0x0021)]
-}
-
-void healthCheck() {
-    log_debug "Running health check"
-    if (!state.lastRx || state.lastRx == 0) {
-        sendEvent(name:"healthStatus", value:"unknown", descriptionText:"Health status unknown (no communication yet)")
-        return
-    }
-    long thresholdSec = (HEALTH_CHECK.threshold as Integer) ?: 43200
-    boolean online = (now() - state.lastRx) < (thresholdSec * 1000)
-    sendEvent(name:"healthStatus", value: online ? "online" : "offline", descriptionText:"Health status is ${online ? 'online' : 'offline'}")
-}
-
-// ===================================================================
-// Zigbee message parsing
-// ===================================================================
-
-void parse(String description) {
-    log_debug "description=${description}"
-
-    // Auto-configure if driver version changed (lastCx mismatch)
-    if (state.lastCx != DRIVER_VERSION) {
-        state.lastCx = DRIVER_VERSION
-        runInMillis(1500, "configure")
-    }
-
-    Map msg = parseDescriptionAsMap(description)
-    log_debug "msg=${msg}"
-
-    state.lastRx = now()
-    if (device.currentValue("healthStatus") != "online") {
-        sendEvent(name:"healthStatus", value:"online", descriptionText:"Health status changed to online", type:"digital")
-    }
-
-    String type = (state.lastTx && (now() - state.lastTx < 3000)) ? "digital" : "physical"
-
-    if (msg.value == null) {
-        log_debug "Message has no value field, ignoring"
+    int callsToday = state.apiCallsToday ?: 0
+    int maxCalls = safeToInteger(settings.maxCallsPerDay, 25)
+    if (callsToday >= maxCalls) {
+        logWarn "Daily API call limit (${maxCalls}) reached. Poll skipped."
+        sendEvent(name: "apiStatus", value: "API_LIMIT_REACHED")
+        scheduleNextPoll()
         return
     }
 
-    // Ensure attrInt is integer for reliable matching
-    if (msg.attrInt instanceof String) {
-        msg.attrInt = Integer.parseInt(msg.attrInt, 16)
-    }
+    // Hardcoded to request 6 days (today + 5 future days)
+    int reqDays = 6
+    String url = buildApiUrl(coords.lat, coords.lon, reqDays)
 
-    switch (msg) {
-        // Contact state from OnOff cluster (standard)
-        case { contains(it, [clusterInt:6, commandInt:10, attrInt:0]) }:
-        case { contains(it, [clusterInt:6, commandInt:1, attrInt:0]) }:
-            String raw = msg.value
-            boolean isOpen = (raw == "01")
-            if (swapOpenClosed) isOpen = !isOpen
-            String contact = isOpen ? "open" : "closed"
-            sendEvent(name:"contact", value:contact, descriptionText:"Contact is ${contact}", type:type)
-            log_info "Contact changed to ${contact}"
-            return
+    def startTime = now()
+    try {
+        httpGet([uri: url, contentType: "application/json", timeout: 15]) { resp ->
+            def duration = (now() - startTime) / 1000.0
+            sendEvent(name: "lastPollDuration", value: Math.round(duration * 10) / 10)
 
-        // Battery percentage from Power Configuration cluster
-        case { contains(it, [clusterInt:1, commandInt:10, attrInt:33]) }:
-        case { contains(it, [clusterInt:1, commandInt:1, attrInt:33]) }:
-            if (msg.value == null && msg.data != null && msg.data[0] == "21" && msg.data[1] == "00") {
-                msg.value = msg.data[2]
+            if (resp.status == 200) {
+                state.consecutiveErrors = 0
+                state.currentRetry = 0
+                state.apiCallsToday = (state.apiCallsToday ?: 0) + 1
+                sendEvent(name: "apiCallsToday", value: state.apiCallsToday)
+                sendEvent(name: "apiStatus", value: "SUCCESS")
+                sendEvent(name: "lastUpdated", value: formatDateTime(new Date()))
+
+                processResponse(resp.data, reqDays)
+            } else {
+                handleApiError(resp, reqDays)
             }
-            if (msg.value == null || msg.value == "FF") {
-                log_warn "Ignored invalid battery percentage (${msg.value})"
-                return
-            }
-            Integer percentage = Integer.parseInt(msg.value, 16) / 2
-            Date nowDate = new Date()
-            sendEvent(name:"battery", value:percentage, unit:"%", descriptionText:"Battery is ${percentage}% full", type:type)
-            sendEvent(name:"lastBattery", value:nowDate, descriptionText:"Last battery report at ${nowDate}", type:type)
-            log_info "Battery reported ${percentage}%"
-            return
-
-        // Xiaomi proprietary data
-        case { contains(it, [clusterInt:0, attrInt:0xFF01]) }:
-        case { contains(it, [clusterInt:0, attrInt:0xFF02]) }:
-            parseXiaomiProprietary(msg, type)
-            return
-
-        // Device rejoined network
-        case { contains(it, [endpointInt:0, clusterInt:19, commandInt:0]) }:
-            log_warn "Device rejoined Zigbee mesh"
-            Integer rejoinCount = (device.currentValue("networkRejoinCount") ?: 0) + 1
-            sendEvent(name:"networkRejoinCount", value:rejoinCount, descriptionText:"Rejoin count = ${rejoinCount}", type:"physical")
-            sendZigbee(refresh(true))
-            return
-
-        // Ignore common noise
-        case { contains(it, [commandInt:11]) }: // Default response
-        case { contains(it, [clusterInt:3]) }: // Identify
-        case { contains(it, [endpointInt:0, clusterInt:32768]) }: // ZDP responses
-            log_debug "Ignored message: ${msg}"
-            return
-
-        default:
-            log_debug "Unhandled message: ${msg}"
+            scheduleNextPoll()
+        }
+    } catch (Exception e) {
+        logError "HTTP GET exception: ${e.message}"
+        handleException(e)
+        scheduleNextPoll()
     }
 }
 
-private void parseXiaomiProprietary(Map msg, String type) {
-    String value = msg.value
-    if (value == null || value.size() < 10) {
-        log_debug "Proprietary data too short"
+private String buildApiUrl(lat, lon, int forecastDays) {
+    return "https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=uv_index,uv_index_clear_sky,shortwave_radiation&forecast_days=${forecastDays}&timezone=auto"
+}
+
+def processResponse(data, int requestedDays) {
+    def uvIndex = getClosestHourlyValue(data, "uv_index")
+    def uvIndexClearSky = getClosestHourlyValue(data, "uv_index_clear_sky")
+    def solarRadiation = getClosestHourlyValue(data, "shortwave_radiation")
+
+    updateUvIndex(uvIndex)
+    updateUvIndexClearSky(uvIndexClearSky)
+    updateIlluminance(solarRadiation)
+
+    def dailyMaxUv = computeDailyMaxUv(data)
+    // requestedDays = 6, we want to display today + 5 future days = 6 total
+    updateForecastAttributes(dailyMaxUv, requestedDays)
+}
+
+def getClosestHourlyValue(data, variableName) {
+    def times = data?.hourly?.time
+    def values = data?.hourly?.get(variableName)
+    if (!times || !values) return null
+    def now = new Date()
+    def closestValue = null, closestDiff = null
+    values.eachWithIndex { val, idx ->
+        if (val != null && idx < times.size()) {
+            def sampleTime = parseOpenMeteoTime(times[idx])
+            if (sampleTime) {
+                def diff = Math.abs(sampleTime.time - now.time)
+                if (closestDiff == null || diff < closestDiff) {
+                    closestDiff = diff
+                    closestValue = val
+                }
+            }
+        }
+    }
+    return closestValue
+}
+
+def parseOpenMeteoTime(String timeStr) {
+    try { return Date.parse("yyyy-MM-dd'T'HH:mm", timeStr) } catch(e) { return null }
+}
+
+def updateUvIndex(val) {
+    if (val == null) return
+    BigDecimal newVal = new BigDecimal(val.toString()).setScale(1, BigDecimal.ROUND_HALF_UP)
+    def current = device.currentValue("uvIndex")
+    BigDecimal threshold = (settings.minUvIndexChange != null) ? new BigDecimal(settings.minUvIndexChange.toString()) : new BigDecimal("0.1")
+    if (current == null || (newVal - new BigDecimal(current.toString())).abs() >= threshold) {
+        sendEvent(name: "uvIndex", value: newVal)
+        sendEvent(name: "uvRisk", value: getUvRisk(newVal))
+    }
+}
+
+def updateUvIndexClearSky(val) {
+    if (val == null) return
+    sendEvent(name: "uvIndexClearSky", value: new BigDecimal(val.toString()).setScale(1, BigDecimal.ROUND_HALF_UP))
+}
+
+def updateIlluminance(solarRadiation) {
+    if (solarRadiation == null) return
+    BigDecimal radiation = new BigDecimal(solarRadiation.toString()).setScale(1, BigDecimal.ROUND_HALF_UP)
+    BigDecimal factor = (settings.luxConversionFactor != null) ? new BigDecimal(settings.luxConversionFactor.toString()) : new BigDecimal("120")
+    BigDecimal illuminance = (radiation * factor).setScale(0, BigDecimal.ROUND_HALF_UP)
+    def current = device.currentValue("illuminance")
+    BigDecimal threshold = (settings.minIlluminanceChange != null) ? new BigDecimal(settings.minIlluminanceChange.toString()) : new BigDecimal("100")
+    if (current == null || (illuminance - new BigDecimal(current.toString())).abs() >= threshold) {
+        sendEvent(name: "illuminance", value: illuminance, unit: "lux")
+    }
+    sendEvent(name: "solarRadiation", value: radiation, unit: "W/m²")
+}
+
+def getUvRisk(uv) {
+    BigDecimal u = uv instanceof BigDecimal ? uv : new BigDecimal(uv.toString())
+    if (u < 3) return "low"
+    if (u < 6) return "moderate"
+    if (u < 8) return "high"
+    if (u < 11) return "very high"
+    return "extreme"
+}
+
+def computeDailyMaxUv(data) {
+    def times = data?.hourly?.time
+    def uvValues = data?.hourly?.uv_index
+    if (!times || !uvValues) return [:]
+    def dailyMax = [:]
+    def dateFormatter = new java.text.SimpleDateFormat("yyyy-MM-dd")
+    dateFormatter.setTimeZone(location.timeZone ?: TimeZone.getTimeZone("UTC"))
+    times.eachWithIndex { timeStr, idx ->
+        if (idx < uvValues.size() && uvValues[idx] != null) {
+            def date = parseOpenMeteoTime(timeStr)
+            if (date) {
+                String localDate = dateFormatter.format(date)
+                double uv = uvValues[idx] as double
+                if (!dailyMax.containsKey(localDate) || uv > dailyMax[localDate]) dailyMax[localDate] = uv
+            }
+        }
+    }
+    return dailyMax
+}
+
+def updateForecastAttributes(dailyMaxMap, int totalDays) {
+    // totalDays is the number of days we have in the map (including today)
+    def sortedDates = dailyMaxMap.keySet().sort()
+    def todayStr = new Date().format("yyyy-MM-dd", location.timeZone)
+    def todayIndex = sortedDates.findIndexOf { it >= todayStr }
+    if (todayIndex < 0) {
+        clearForecastAttributes()
         return
     }
-
-    // Battery voltage extraction
-    String batteryHex = null
-    if (msg.attrInt == 0xFF01 && value[4..5] == "21") {
-        batteryHex = value[8..9] + value[6..7]
-    } else if (msg.attrInt == 0xFF02 && value[8..9] == "21") {
-        batteryHex = value[12..13] + value[10..11]
+    def forecastList = []
+    for (int i = todayIndex; i < Math.min(todayIndex + totalDays, sortedDates.size()); i++) {
+        forecastList << dailyMaxMap[sortedDates[i]]
     }
-    if (batteryHex) {
-        int voltage = Integer.parseInt(batteryHex, 16)
-        int percentage = Math.min(100, Math.max(0, (voltage - 20) * 10))
-        Date nowDate = new Date()
-        sendEvent(name:"battery", value:percentage, unit:"%", descriptionText:"Battery is ${percentage}% full", type:type)
-        sendEvent(name:"lastBattery", value:nowDate, descriptionText:"Last battery report at ${nowDate}", type:type)
-        log_info "Battery reported ${percentage}% (proprietary)"
+    // Pad with null if fewer days than expected
+    while (forecastList.size() < totalDays) forecastList << null
+
+    // Helper to send both numeric (rounded) and risk attributes
+    def sendForecast = { String suffix, BigDecimal value ->
+        def rounded = (value != null) ? Math.round(value * 10) / 10 : null
+        sendEvent(name: "forecastUv${suffix}", value: rounded != null ? rounded : "N/A")
+        sendEvent(name: "forecastUvRisk${suffix}", value: rounded != null ? getUvRisk(rounded) : "N/A")
     }
 
-    // Contact state extraction
-    String contactHex = null
-    if (msg.attrInt == 0xFF01 && value.size() >= 6 && value[-6..-3] == "6410") {
-        contactHex = value[-2..-1]
-    } else if (msg.attrInt == 0xFF02 && value.size() >= 8 && value[0..5] == "060010") {
-        contactHex = value[6..7]
-    }
-    if (contactHex) {
-        int raw = Integer.parseInt(contactHex, 16)
-        boolean isOpen = (raw == 1)
-        if (swapOpenClosed) isOpen = !isOpen
-        sendEvent(name:"contact", value: isOpen ? "open" : "closed", descriptionText:"Contact is ${isOpen ? 'open' : 'closed'}", type:type)
-        log_info "Contact changed to ${isOpen ? 'open' : 'closed'} (proprietary)"
-    }
+    sendForecast("Today", forecastList.size() > 0 ? forecastList[0] : null)
+    sendForecast("Tomorrow", forecastList.size() > 1 ? forecastList[1] : null)
+    sendForecast("Day2", forecastList.size() > 2 ? forecastList[2] : null)
+    sendForecast("Day3", forecastList.size() > 3 ? forecastList[3] : null)
+    sendForecast("Day4", forecastList.size() > 4 ? forecastList[4] : null)
+    sendForecast("Day5", forecastList.size() > 5 ? forecastList[5] : null)
 }
 
-// ===================================================================
-// Helper methods
-// ===================================================================
-
-private void sendZigbee(List cmds) {
-    if (!cmds) return
-    // Flatten any nested lists and filter out non-strings and any leftover "delay" strings
-    List<String> flatCmds = cmds.flatten().findAll { it instanceof String && !it.startsWith("delay") }
-    if (flatCmds.isEmpty()) return
-    List<String> send = delayBetween(flatCmds, 1000)
-    log_debug "Sending Zigbee: ${send}"
-    state.lastTx = now()
-    sendHubCommand(new hubitat.device.HubMultiAction(send, hubitat.device.Protocol.ZIGBEE))
+def clearForecastAttributes() {
+    def clearOne = { String suffix ->
+        sendEvent(name: "forecastUv${suffix}", value: "N/A")
+        sendEvent(name: "forecastUvRisk${suffix}", value: "N/A")
+    }
+    clearOne("Today")
+    clearOne("Tomorrow")
+    clearOne("Day2")
+    clearOne("Day3")
+    clearOne("Day4")
+    clearOne("Day5")
 }
 
-private Map parseDescriptionAsMap(String description) {
-    Map map = [:]
-    if (description.startsWith("read attr -")) {
-        description.split(", ").each {
-            def pair = it.split(": ")
-            map[pair[0]] = pair[1]
+// ====== Error Handling & Retries ======
+
+def handleApiError(response, int requestedDays) {
+    logError "API error ${response.status}: ${response.errorMessage ?: 'No message'}"
+    sendEvent(name: "apiStatus", value: "ERROR_${response.status}")
+
+    if (settings.enableAdvancedRetries) {
+        int maxRetries = safeToInteger(settings.maxRetriesPref, 3)
+        int current = state.currentRetry ?: 0
+        if (current < maxRetries) {
+            state.currentRetry = current + 1
+            int backoff = calculateBackoff(state.currentRetry)
+            logInfo "Retry ${state.currentRetry}/${maxRetries} in ${backoff}s."
+            runIn(backoff, "pollOpenMeteo")
+            return
+        } else {
+            logError "Max retries reached."
+            state.currentRetry = 0
+            state.consecutiveErrors = (state.consecutiveErrors ?: 0) + 1
         }
     } else {
-        map = zigbee.parseDescriptionAsMap(description)
+        state.consecutiveErrors = (state.consecutiveErrors ?: 0) + 1
     }
-    if (map.cluster) map.clusterInt = Integer.parseInt(map.cluster, 16)
-    if (map.attrId) map.attrInt = Integer.parseInt(map.attrId, 16)
-    if (map.command) map.commandInt = Integer.parseInt(map.command, 16)
-    if (map.endpoint) map.endpointInt = Integer.parseInt(map.endpoint, 16)
-    return map
 }
 
-private boolean contains(Map msg, Map spec) {
-    return msg.keySet().containsAll(spec.keySet()) && spec.every { it.value == msg[it.key] }
+def handleException(Exception e) {
+    logError "Exception: ${e.message}"
+    sendEvent(name: "apiStatus", value: "EXCEPTION")
+    if (settings.enableAdvancedRetries) {
+        int maxRetries = safeToInteger(settings.maxRetriesPref, 3)
+        int current = state.currentRetry ?: 0
+        if (current < maxRetries) {
+            state.currentRetry = current + 1
+            int backoff = calculateBackoff(state.currentRetry)
+            runIn(backoff, "pollOpenMeteo")
+            return
+        }
+    }
+    state.currentRetry = 0
+    state.consecutiveErrors = (state.consecutiveErrors ?: 0) + 1
 }
 
-private void log_debug(String msg) {
-    String level = (logLevel != null) ? logLevel : "1"
-    if (level == "1") log.debug "${device.displayName} ${msg.uncapitalize()}"
+int calculateBackoff(int attempt) {
+    int delay = 30 * (Math.pow(2, attempt - 1) as int)
+    int maxBack = safeToInteger(settings.maxBackoffPref, 3600)
+    return Math.min(delay, maxBack)
 }
-private void log_info(String msg) {
-    String level = (logLevel != null) ? logLevel : "1"
-    if (level.toInteger() <= 2) log.info "${device.displayName} ${msg.uncapitalize()}"
+
+// ====== Midnight Reset ======
+
+def checkMidnightReset() {
+    String today = new Date().format("yyyy-MM-dd", location.timeZone)
+    if (state.lastResetDate != today) midnightMaintenance()
 }
-private void log_warn(String msg) {
-    String level = (logLevel != null) ? logLevel : "1"
-    if (level.toInteger() <= 3) log.warn "${device.displayName} ${msg.uncapitalize()}"
+
+def midnightMaintenance() {
+    logInfo "Midnight maintenance – resetting API call counter."
+    state.apiCallsToday = 0
+    sendEvent(name: "apiCallsToday", value: 0)
+    if (settings.autoResetMidnight) {
+        state.consecutiveErrors = 0
+        state.currentRetry = 0
+    }
+    state.lastResetDate = new Date().format("yyyy-MM-dd", location.timeZone)
+    scheduleNextPoll()
 }
-private void log_error(String msg) {
-    log.error "${device.displayName} ${msg.uncapitalize()}"
+
+// ====== Helpers ======
+
+private Map getCoordinates() {
+    if (settings.useCustomLocation) {
+        if (settings.customLat && settings.customLong) {
+            return [lat: settings.customLat.toDouble(), lon: settings.customLong.toDouble()]
+        }
+        return null
+    }
+    def lat = location?.latitude
+    def lon = location?.longitude
+    return (lat != null && lon != null) ? [lat: lat, lon: lon] : null
 }
+
+private boolean isDaytime(Date now = new Date()) {
+    if (!settings.daytimeStart || !settings.nighttimeStart) return true
+    Date dayStart = timeToday(settings.daytimeStart, location.timeZone)
+    Date nightStart = timeToday(settings.nighttimeStart, location.timeZone)
+    if (dayStart < nightStart) return now >= dayStart && now < nightStart
+    return now >= dayStart || now < nightStart
+}
+
+String formatDateTime(Date date) {
+    if (!date) return "N/A"
+    String fmt = settings.dateTimeFormat ?: "MM/DD/YYYY AM/PM"
+    String pattern
+    switch(fmt) {
+        case "MM/DD/YYYY AM/PM": pattern = "MM/dd/yyyy hh:mm a"; break
+        case "YYYY-MM-DD (24-hour)": pattern = "yyyy-MM-dd HH:mm"; break
+        case "YYYY-MM-DD AM/PM": pattern = "yyyy-MM-dd hh:mm a"; break
+        case "MM/DD/YYYY (24-hour)": pattern = "MM/dd/yyyy HH:mm"; break
+        case "DD/MM/YYYY (24-hour)": pattern = "dd/MM/yyyy HH:mm"; break
+        case "DD/MM/YYYY AM/PM": pattern = "dd/MM/yyyy hh:mm a"; break
+        case "Mon DD, YYYY hh:MM AM/PM": pattern = "MMM dd, yyyy hh:mm a"; break
+        case "Day, Mon DD, YYYY hh:MM AM/PM": pattern = "EEEE, MMM dd, yyyy hh:mm a"; break
+        default: pattern = "MM/dd/yyyy hh:mm a"
+    }
+    return date.format(pattern, location.timeZone)
+}
+
+// ====== Logging ======
+
+def logDebug(msg) { if (settings.logVerbosity == "DEBUG") log.debug "${device.label}: ${msg}" }
+def logInfo(msg) { if (settings.logVerbosity in ["DEBUG","INFO"]) log.info "${device.label}: ${msg}" }
+def logWarn(msg) { if (settings.logVerbosity in ["DEBUG","INFO","WARN"]) log.warn "${device.label}: ${msg}" }
+def logError(msg) { log.error "${device.label}: ${msg}" }

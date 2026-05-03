@@ -2,9 +2,9 @@
 ### _A Clean, Reliable Driver for Zigbee Contact Sensors (MCCGQ11LM / AS006CNW01)_
 
 ## 🔢 Version Control
-**Document Control:** 1.0.2  
+**Document Control:** 1.0.3  
 **Current Status:** Stable  
-- **Driver:** `XiaomiAqaraContactSensor-DGBQ.groovy` (v1.0.11)  
+- **Driver:** `XiaomiAqaraContactSensor-DGBQ.groovy` (v1.0.17)  
 **Maintenance Lead:** David Ball-Quenneville (DGBQ)  
 **Original Developers:** Jonathan Michaelsen (Xiaomi Aqara Mijia driver), Dan Danache (IKEA Parasoll driver structure)
 
@@ -48,6 +48,8 @@ This driver combines the best of both: it retains the **proprietary Xiaomi Zigbe
 - **Network Rejoin Count:** Tracks how many times the device rejoins the Zigbee mesh, useful for diagnosing connectivity issues.
 - **Contact State Inversion:** Preference to swap `open` and `closed` if the sensor is installed backwards.
 - **Log Verbosity Control:** Choose between Debug, Info, Warning, or Error logging. Debug mode auto‑reverts to Info after 30 minutes (can be disabled with the `Auto-Revert Debug` preference).
+- **Battery Voltage Reporting:** `batteryVoltage` attribute provides raw voltage in volts (e.g., 3.06V) for advanced diagnostics.
+- **Improved Proprietary Logging:** Only logs contact changes when the state actually changes (clearer `Contact reported as open/closed (proprietary message)`).
 
 ### **Preserved Essential Xiaomi Handling**
 - Maintains proprietary `FF01`/`FF02` attribute parsing for devices that do not use standard Zigbee clusters for battery and contact reporting.
@@ -86,9 +88,9 @@ No parent/child relationship is required – this is a standalone device driver.
 ### **Attributes (States)**
 - `contact` – `open` or `closed`
 - `battery` – Percentage (0–100%)
+- `batteryVoltage` – Voltage in volts (e.g., 3.06V)
 - `lastBattery` – Timestamp of last battery report
 - `healthStatus` – `online`, `offline`, or `unknown`
-- `checkInterval` – How often health checks run (3600 seconds)
 - `networkRejoinCount` – Number of times device rejoined mesh
 
 ---
@@ -111,5 +113,6 @@ This driver was refined with the assistance of **Gemini AI** to audit, restructu
 
 | Version | Date | Changes |
 | :--- | :--- | :--- |
+| **1.0.3** | 2026-05-03 | Updated for driver v1.0.17: added `batteryVoltage` attribute, removed `checkInterval`, corrected voltage conversion description, improved logging and health status after configure. |
 | **1.0.2** | 2026-04-27 | Updated for driver v1.0.11: added Auto-Revert Debug preference, removed HealthCheck capability (no more stray "Ping" button). Preserved all existing content. |
 | **1.0.0** | 2026-04-24 | Initial release – stripped universal driver, added health check, log levels, contact inversion, and network rejoin count. |
