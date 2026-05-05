@@ -76,6 +76,8 @@ The driver exposes the following attributes for use in dashboards, Rule Machine,
 | **`healthStatus`** | String | `online`, `offline`, `unknown` | Indicates whether the sensor has communicated recently. `online` means a message was received within the last 12 hours. |
 | **`networkRejoinCount`** | Integer | Counter | Increments each time the sensor announces a rejoin to the Zigbee mesh (Device_annce message). Helps diagnose mesh stability issues. |
 
+**Note:** Health status is logged at `Info` level only when the status changes (e.g., from `online` to `offline`). The hourly health check itself logs only at `Debug` level to avoid log clutter.
+
 ---
 
 ## 5. Internal Logic & State Variables

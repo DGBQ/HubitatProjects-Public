@@ -93,6 +93,8 @@ No parent/child relationship is required – this is a standalone device driver.
 - `healthStatus` – `online`, `offline`, or `unknown`
 - `networkRejoinCount` – Number of times device rejoined mesh
 
+**Note:** Health status is logged at `Info` level only when the status changes (e.g., from `online` to `offline`). The hourly health check itself logs only at `Debug` level to avoid log clutter.
+
 ---
 
 <h2 id="disclaimers">🛡️ Disclaimers</h2>
