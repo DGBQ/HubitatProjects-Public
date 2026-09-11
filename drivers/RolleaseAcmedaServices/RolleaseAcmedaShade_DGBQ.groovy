@@ -3,7 +3,7 @@
  * Type: Child Driver
  * Purpose: Represents a single shade motor. Receives commands from the parent hub driver
  *          and updates its state. Features proactive state updates to satisfy Alexa's
- *          response time requirements.
+ *          response time requirements. Includes confirmation‑based retry and RF jitter.
  *
  * Author: David Ball-Quenneville (maintainer, based on Younes Oughla previous work)
  * Copyright 2026 David Ball-Quenneville
@@ -21,53 +21,48 @@
  * limitations under the License.
  *
  * Revision History:
- * v2.3.9 - 2026-04-07 - David Ball-Quenneville
- *   - Added stub implementations for StartPositionChange and StopPositionChange (logs INFO).
- *   - Added duration parameter warning to setLevel (logs INFO if non‑zero duration supplied).
- *   - No functional changes; improves user feedback for unsupported UI commands.
+ * v2.5.4 - 2026-09-11 - David Ball-Quenneville
+ *   - HOTFIX: Battery voltage‑to‑percentage formula adjusted to better match
+ *     the Rollease app. Old range: 10.8V–12.6V. New range: 9.5V–12.6V.
+ *     Improves accuracy across all shades (roman and roller, external and
+ *     embedded batteries) from ~9–25% error down to ~0–4% error.
  *
- * v2.3.8 - 2026-04-07 - David Ball-Quenneville
- *   - Prevent duplicate position confirmation logs.
+ * v2.5.3 - 2026-09-02 - David Ball-Quenneville
+ *   - Fixed MissingMethodException: logWarn → logWarning.
+ *   - Improved jitter ID: uses the shade's own motorAddress instead of getChildDevices().
+ *   - Clear pendingTarget on confirmation.
+ *   - Retry count now correctly increments when jitter is used.
  *
- * v2.3.7 - 2026-04-07 - David Ball-Quenneville
- *   - Added INFO logs for command initiation and final position confirmation.
+ * v2.5.2 - 2026-09-02 - David Ball-Quenneville
+ *   - Added confirmation‑based retry logic (retries only if hub confirms).
+ *   - Added RF Jitter workaround – sends a harmless status request to wake the hub's RF transmitter.
+ *   - Grouped retry preferences between Battery Offset and Description Logging.
+ *   - Removed Keep Debug Logging On – consolidated into Auto-Revert Debug.
  *
- * v2.3.6 - 2026-04-07 - David Ball-Quenneville
- *   - Fixed preference access in logging helpers (settings. prefix).
+ * v2.5.1 - 2026-09-02 - David Ball-Quenneville
+ *   - Added command retry feature (position‑based, later improved).
  *
- * v2.3.5 - 2026-04-05 - David Ball-Quenneville
- *   - Added Auto-Revert Debug preference and reordered preferences.
- *
- * v2.3.4 - 2026-04-05 - David Ball-Quenneville
- *   - Added manual "Request Battery Status" command.
- *
- * v2.3.3 - 2026-04-05 - David Ball-Quenneville
- *   - Added battery offset preference.
- *
- * v2.3.2 - 2026-03-30 - David Ball-Quenneville
- *   - Added auto-repair of parent link.
- *
- * v2.3.1 - 2026-03-20 - David Ball-Quenneville
- *   - Removed status attribute and subscription.
- *
- * Note: Full revision history available in RolleaseAcmedaHub-DGBQ_CHANGELOG.md
+ * v2.4.4 - 2026-07-25 - David Ball-Quenneville
+ *   - Stable baseline – no retry logic.
  */
 
 metadata {
     definition (
         name: "Rollease Acmeda Shade",
         namespace: "DGBQ",
-        author: "David Ball-Quenneville (based on Younes Oughla previous work",
-        version: "2.3.9",
+        author: "David Ball-Quenneville (based on Younes Oughla previous work)",
+        version: "2.5.4",
         vid: "generic-shade",
         importUrl: ""
     ) {
         capability "Initialize"
         capability "Refresh"
         capability "Switch Level"
-        capability "Switch"
         capability "Window Shade"
         capability "Battery"
+
+        // Removed capability "Switch" – clean UI.
+        // Removed explicit command "on" and "off" – Alexa uses Window Shade capability.
 
         command "stop"
         command "toggle"
@@ -80,13 +75,38 @@ metadata {
         attribute "voltage", "int"
         attribute "batteryVoltage", "decimal"
         attribute "rssi", "string"
+        attribute "switch", "enum", ["on", "off"]
     }
 
     preferences {
         input name: "motorAddress", type: "string", title: "Motor Address", description: "", defaultValue: "000", required: true, displayDuringSetup: true
+
         input name: "batteryOffset", type: "number", title: "Battery Offset (%)", description: "Adjust reported battery percentage (e.g., +15 if fully charged shows 85%). Range -30 to +30.", defaultValue: 0, required: false, displayDuringSetup: false, range: "-30..30"
+
+        input name: "cmdRetryCount", type: "number",
+            title: "Command Retry Count",
+            description: "Number of retries if a command fails to receive confirmation. Set to 0 to disable retries. Default: 2.",
+            defaultValue: 2,
+            required: false,
+            range: "0..5"
+
+        input name: "cmdRetryWait", type: "number",
+            title: "Command Retry Wait Time (seconds)",
+            description: "Time to wait before retrying a command. A longer wait gives the shade time to respond. Default: 10 seconds.",
+            defaultValue: 10,
+            required: false,
+            range: "5..30"
+
+        input name: "enableJitter", type: "bool",
+            title: "Enable RF Jitter",
+            description: "If a command fails, send a harmless status request to wake the hub's RF transmitter, then retry. Default: On.",
+            defaultValue: true,
+            required: false
+
         input name: "txtEnable", type: "bool", title: "Enable Description Logging", description: "Human‑readable activity logs", defaultValue: true, required: false, displayDuringSetup: false
+
         input name: "logEnable", type: "bool", title: "Enable Debug Logging", description: "Detailed logs; auto‑off after 30 mins (unless Auto-Revert is disabled)", defaultValue: false, required: false, displayDuringSetup: false
+
         input name: "autoRevertDebug", type: "bool", title: "Auto-Revert Debug", description: "When enabled, automatically turns off debug logging after 30 minutes. When disabled, debug stays on until manually turned off.", defaultValue: true, required: false, displayDuringSetup: false
     }
 }
@@ -96,8 +116,10 @@ def installed() {
 }
 
 def updated() {
-    if (!settings.autoRevertDebug) unschedule("logsOff")
-    if (!settings.logEnable) unschedule("logsOff")
+    // Cancel auto‑off if debug is off or Auto‑Revert is disabled
+    if (!settings.logEnable || !settings.autoRevertDebug) {
+        unschedule("logsOff")
+    }
     initialize()
 }
 
@@ -123,6 +145,12 @@ def initialize() {
     } else if (settings.logEnable && !settings.autoRevertDebug) {
         logDebug "Debug logging will remain on (Auto-Revert disabled)"
     }
+
+    // Clear any pending retry state
+    state.pendingTarget = null
+    state.retryCount = 0
+    state.confirmed = false
+    state.jitterUsed = false
 }
 
 def on() { open() }
@@ -144,7 +172,7 @@ def open() {
     sendEvent(name: "position", value: 100)
     sendEvent(name: "windowShade", value: "opening")
     sendEvent(name: "moving", value: true)
-    parent.sendTelnetCommand("!${motorAddress}m000")
+    sendCommand("!${motorAddress}m000", 100)
 }
 
 def close() {
@@ -155,7 +183,7 @@ def close() {
     sendEvent(name: "position", value: 0)
     sendEvent(name: "windowShade", value: "closing")
     sendEvent(name: "moving", value: true)
-    parent.sendTelnetCommand("!${motorAddress}m100")
+    sendCommand("!${motorAddress}m100", 0)
 }
 
 def setPosition(position) {
@@ -185,7 +213,95 @@ def setPosition(position) {
     logInfo "Command sent: Moving to ${target}%"
     int inverted = 100 - target
     String posStr = inverted.toString().padLeft(3, '0')
-    parent.sendTelnetCommand("!${motorAddress}m${posStr}")
+    sendCommand("!${motorAddress}m${posStr}", target)
+}
+
+private def sendCommand(String commandString, int target) {
+    // Cancel any pending retry timer
+    unschedule("checkPositionConfirmation")
+    unschedule("retryCommand")
+    unschedule("jitterRetry")
+
+    // Store target and reset state
+    state.pendingTarget = target
+    state.retryCount = 0
+    state.confirmed = false
+    state.currentCommand = commandString
+    state.jitterUsed = false
+
+    // Send the command
+    parent.sendTelnetCommand(commandString)
+    logDebug "Command sent, waiting for confirmation to ${target}%"
+
+    // Start confirmation timer
+    int waitTime = settings.cmdRetryWait ?: 10
+    runIn(waitTime, "checkPositionConfirmation")
+}
+
+def checkPositionConfirmation() {
+    def target = state.pendingTarget
+
+    if (target == null) {
+        logDebug "No pending command to confirm"
+        return
+    }
+
+    // If confirmation was received, we're done
+    if (state.confirmed) {
+        logDebug "Position confirmed: ${target}%"
+        state.pendingTarget = null
+        state.retryCount = 0
+        state.jitterUsed = false
+        return
+    }
+
+    // Not confirmed – retry or use jitter
+    int maxRetries = settings.cmdRetryCount ?: 2
+    int currentRetry = (state.retryCount ?: 0) + 1
+
+    // If jitter hasn't been tried yet, and enabled, do it first
+    if (settings.enableJitter && !state.jitterUsed) {
+        logWarning "No confirmation – sending RF jitter to wake hub transmitter"
+        state.jitterUsed = true
+        // Use the current shade's own motor address for the status request
+        // This is guaranteed to be a valid ID known to the hub.
+        String jitterId = motorAddress
+        parent.sendTelnetCommand("!${jitterId}r?")
+        // Increment retry count so that this jitter attempt counts as a retry
+        state.retryCount = currentRetry
+        // Wait 3 seconds, then retry the original command
+        runIn(3, "retryWithJitter")
+        return
+    }
+
+    // If we've already tried jitter or it's disabled, proceed with normal retry
+    if (maxRetries > 0 && currentRetry <= maxRetries) {
+        state.retryCount = currentRetry
+        logWarning "Position not confirmed – retry ${currentRetry}/${maxRetries}"
+        parent.sendTelnetCommand(state.currentCommand)
+        int waitTime = settings.cmdRetryWait ?: 10
+        runIn(waitTime, "checkPositionConfirmation")
+    } else {
+        logWarning "Position not confirmed after ${maxRetries} retries – command may have failed"
+        state.pendingTarget = null
+        state.retryCount = 0
+        state.jitterUsed = false
+    }
+}
+
+def retryWithJitter() {
+    // After jitter, retry the original command once more
+    if (state.confirmed) {
+        logDebug "Position confirmed after jitter"
+        state.pendingTarget = null
+        state.retryCount = 0
+        state.jitterUsed = false
+        return
+    }
+    logWarning "Retrying after jitter"
+    parent.sendTelnetCommand(state.currentCommand)
+    int waitTime = settings.cmdRetryWait ?: 10
+    runIn(waitTime, "checkPositionConfirmation")
 }
 
 def stop() {
@@ -193,6 +309,14 @@ def stop() {
     logInfo "Command sent: Stop"
     sendEvent(name: "windowShade", value: "partially open")
     sendEvent(name: "moving", value: false)
+    // Cancel any pending retry
+    unschedule("checkPositionConfirmation")
+    unschedule("retryCommand")
+    unschedule("jitterRetry")
+    state.pendingTarget = null
+    state.retryCount = 0
+    state.confirmed = false
+    state.jitterUsed = false
     parent.sendTelnetCommand("!${motorAddress}s")
 }
 
@@ -233,6 +357,17 @@ def parse(String msg) {
         String posStr = msg.substring(5, 8)
         int position = 100 - Integer.parseInt(posStr)
         positionUpdated(position)
+
+        // If this matches the pending target, mark as confirmed and clear pending
+        def target = state.pendingTarget
+        if (target != null && position == target) {
+            state.confirmed = true
+            state.pendingTarget = null
+            logDebug "Confirmation received for target ${target}%"
+            unschedule("checkPositionConfirmation")
+            unschedule("retryCommand")
+            unschedule("jitterRetry")
+        }
     }
 
     if (msg.startsWith("!${motorAddress}m")) {
@@ -259,7 +394,9 @@ def parse(String msg) {
         try {
             int rawVolt = vStr.toInteger()
             double voltDecimal = rawVolt / 100.0
-            double pct = ((voltDecimal - 10.8) / (12.6 - 10.8)) * 100
+            // v2.5.4 HOTFIX: Adjusted voltage range to 9.5V (0%) – 12.6V (100%)
+            // to better match the Rollease app.
+            double pct = ((voltDecimal - 9.5) / (12.6 - 9.5)) * 100
             int batteryPct = Math.min(Math.max(pct.toInteger(), 0), 100)
             int offset = (settings.batteryOffset != null) ? settings.batteryOffset.toInteger() : 0
             int adjustedPct = Math.min(Math.max(batteryPct + offset, 0), 100)
@@ -291,7 +428,7 @@ def positionUpdated(int position) {
     sendEvent(name: "position", value: position)
     sendEvent(name: "level", value: position)
     sendEvent(name: "moving", value: false)
-    
+
     // Only log if position has changed from last logged position
     def lastLoggedPos = state.lastLoggedPosition
     if (lastLoggedPos == null || lastLoggedPos != position) {

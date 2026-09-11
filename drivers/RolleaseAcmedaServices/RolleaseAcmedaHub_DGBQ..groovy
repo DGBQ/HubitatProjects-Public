@@ -21,14 +21,26 @@
  * limitations under the License.
  *
  * Revision History:
+ * v3.3.24 - 2026-09-11 - David Ball-Quenneville
+ *   - PHASE 1 (Critical Bug Fixes):
+ *     - ShadeAdd(): Added child.initialize() after setting motorAddress.
+ *     - parse(): Added child.initialize() on new child creation; added address
+ *       validation for existing children (updates motorAddress if mismatched).
+ *     - ShadeRemove(): Added safety check – verifies child's motorAddress matches
+ *       the requested motorId before deletion. Aborts if mismatched or null.
+ *
+ * v3.3.23 - 2026-07-25 - David Ball-Quenneville
+ *   - Added connectionState attribute (connected, connecting, idle, error).
+ *   - Added lastConnectionChange attribute (timestamp of last state change).
+ *   - Added status mirroring – status always matches connectionState.
+ *   - Added Auto Child Refresh – all child shades are refreshed after Initialize.
+ *   - Added keepDebugOn preference – prevents debug logging from auto‑disabling.
+ *   - All recovery features remain disabled.
+ *
  * v3.3.12 - 2026-04-07 - David Ball-Quenneville
- *   - Fixed preference access in logging helpers (now uses settings. prefix) to ensure reliable INFO logs.
+ *   - Stable baseline – no aggressive features.
+ *   - Error Silencer, Auto-Revert Debug, standard attributes.
  *
- * v3.3.11 - 2026-04-06 - David Ball-Quenneville
- *   - Added Auto-Revert Debug preference.
- *   - Removed redundant custom commands SendMsg and SendPulse.
- *
- * v3.3.10 - 2026-03-20 - David Ball-Quenneville
  * Note: Full revision history available in RolleaseAcmedaHub-DGBQ_CHANGELOG.md
  */
 
@@ -37,7 +49,7 @@ metadata {
         name: "Rollease Acmeda Hub",
         namespace: "DGBQ",
         author: "David Ball-Quenneville (based on Younes Oughla previous work)",
-        version: "3.3.12",
+        version: "3.3.24",
         vid: "generic-shade",
         importUrl: ""
     ) {
@@ -53,6 +65,8 @@ metadata {
         command "sendTelnetCommand", ["string"]
 
         attribute "status", "enum", ["online", "idle", "offline"]
+        attribute "connectionState", "enum", ["connected", "connecting", "idle", "error"]
+        attribute "lastConnectionChange", "string"
         attribute "lastCommand", "string"
         attribute "lastAction", "string"
         attribute "lastUpdate", "string"
@@ -65,7 +79,8 @@ metadata {
         input name: "connectionRetryInterval", type: "number", title: "Connection Retry Interval", description: "Number of seconds to wait before re-attempting the connection. 0=Do Not Retry", defaultValue: 300, required: false, displayDuringSetup: false
         input name: "maxIdleTime", type: "number", title: "Maximum Idle Time", description: "Reset connection to hub if no status reports are received within this time (Seconds). 0=Disabled", defaultValue: 3600, required: false, displayDuringSetup: false
         input name: "enableSilencer", type: "bool", title: "Enable Error Silencer", description: "Intercept 'Stream is closed' and log as INFO instead of ERROR", defaultValue: true, required: false, displayDuringSetup: false
-        input name: "logEnable", type: "bool", title: "Enable Debug Logging", description: "Detailed logs; auto‑off after 30 mins (unless Auto-Revert is disabled)", defaultValue: false, required: false, displayDuringSetup: false
+        input name: "logEnable", type: "bool", title: "Enable Debug Logging", description: "Detailed logs; auto‑off after 30 mins (unless Keep Debug On is enabled)", defaultValue: false, required: false, displayDuringSetup: false
+        input name: "keepDebugOn", type: "bool", title: "Keep Debug Logging On", description: "When enabled, debug logging will NOT auto‑disable after 30 minutes.", defaultValue: false, required: false, displayDuringSetup: false
         input name: "autoRevertDebug", type: "bool", title: "Auto-Revert Debug", description: "When enabled, automatically turns off debug logging after 30 minutes. When disabled, debug stays on until manually turned off.", defaultValue: true, required: false, displayDuringSetup: false
         input name: "txtEnable", type: "bool", title: "Enable Description Logging", description: "Human‑readable activity logs", defaultValue: true, required: false, displayDuringSetup: false
     }
@@ -76,16 +91,22 @@ def installed() {
 }
 
 def updated() {
+    // Cancel auto‑off if Keep Debug On is enabled or if debug is off
+    if (settings.keepDebugOn || !settings.logEnable) {
+        unschedule("logsOff")
+    }
     if (!settings.autoRevertDebug) {
         unschedule("logsOff")
     }
-    if (!settings.logEnable) unschedule("logsOff")
     initialize()
 }
 
 def initialize() {
     unschedule("checkIdle")
     unschedule()
+
+    // Update connection state and timestamp
+    updateConnectionState("connecting")
 
     telnetClose()
 
@@ -96,19 +117,57 @@ def initialize() {
     }
 
     logInfo "Opening telnet connection to ${settings.hubAddress}:${port}"
-    telnetConnect([termChars:[59]], settings.hubAddress, port.toInteger(), null, null)
+
+    try {
+        telnetConnect([termChars:[59]], settings.hubAddress, port.toInteger(), null, null)
+        updateConnectionState("connected")
+    } catch (e) {
+        updateConnectionState("error")
+        logError "Connection failed: ${e.message}"
+    }
+
     startMaxIdleTimer()
 
-    if (settings.logEnable && settings.autoRevertDebug) {
+    // Debug logging – respect Keep Debug On preference
+    if (settings.logEnable && !settings.keepDebugOn && settings.autoRevertDebug) {
         runIn(1800, "logsOff")
         logDebug "Debug logging will auto-disable after 30 minutes (Auto-Revert enabled)"
+    } else if (settings.logEnable && settings.keepDebugOn) {
+        logDebug "Debug logging will remain on (Keep Debug On enabled)"
     } else if (settings.logEnable && !settings.autoRevertDebug) {
         logDebug "Debug logging will remain on (Auto-Revert disabled)"
     }
 
-    sendEvent(name: "status", value: "online")
     rebuildShadeList()
     updateShadesAttribute()
+
+    // Auto Child Refresh – refresh all child shades after Initialize
+    getChildDevices().each { child ->
+        try {
+            child.refresh()
+            logDebug "Refreshed child: ${child.displayName}"
+        } catch (e) {
+            logDebug "Could not refresh child: ${child.displayName}"
+        }
+    }
+}
+
+def updateConnectionState(state) {
+    sendEvent(name: "connectionState", value: state)
+    def now = new Date().format("yyyy-MM-dd HH:mm:ss")
+    sendEvent(name: "lastConnectionChange", value: now)
+
+    // Mirror status to connectionState
+    def statusMap = [
+        "connected": "online",
+        "connecting": "connecting",
+        "idle": "idle",
+        "error": "offline"
+    ]
+    def newStatus = statusMap[state] ?: "offline"
+    sendEvent(name: "status", value: newStatus)
+
+    logDebug "Connection state changed to ${state} at ${now} (status -> ${newStatus})"
 }
 
 def rebuildShadeList() {
@@ -144,12 +203,12 @@ def sendTelnetCommand(String commandString) {
 def telnetStatus(String status) {
     if (settings.enableSilencer && (status.contains("Stream is closed") || status.contains("receive error"))) {
         logInfo "Hub finished transmission and disconnected (Normal Behavior)."
-        sendEvent(name: "status", value: "idle")
+        updateConnectionState("idle")
         return
     }
 
     logError "telnetStatus: error: " + status
-    sendEvent(name: "status", value: "offline")
+    updateConnectionState("error")
 
     if (settings.connectionRetryInterval > 1) {
         logInfo "Will try to reconnect in ${settings.connectionRetryInterval} seconds"
@@ -173,11 +232,19 @@ private parse(String msg) {
         logInfo "Found New Shade: " + motorAddress
         cd = addChildDevice("DGBQ", "Rollease Acmeda Shade", "${thisId}-${motorAddress}", [name: "Rollease Acmeda Shade - ${motorAddress}", isComponent: false])
         cd.updateSetting("motorAddress", [type:"STRING", value:motorAddress])
+        cd.initialize()  // PHASE 1 FIX: initialize new child so it sets up state correctly
         if (!state.shadeList) state.shadeList = []
         if (!state.shadeList.contains(motorAddress)) {
             state.shadeList << motorAddress
             updateShadesAttribute()
             logDebug "Added ${motorAddress} to shadeList"
+        }
+    } else {
+        // PHASE 1 FIX: Ensure existing child has the correct motorAddress
+        def currentAddress = cd.settings?.motorAddress
+        if (currentAddress != motorAddress) {
+            logDebug "Updating child ${cd.displayName} motorAddress from ${currentAddress} to ${motorAddress}"
+            cd.updateSetting("motorAddress", [type:"STRING", value:motorAddress])
         }
     }
 
@@ -227,7 +294,7 @@ private def resetConnection() {
 }
 
 def logsOff() {
-    if (settings.logEnable) {
+    if (settings.logEnable && !settings.keepDebugOn) {
         log.warn "Debug logging auto-disabled (Auto-Revert was enabled)"
         device.updateSetting("logEnable", [value: "false", type: "bool"])
     }
@@ -281,6 +348,7 @@ def ShadeAdd(String motorId) {
             isComponent: false
         ])
         child.updateSetting("motorAddress", [type:"STRING", value:motorId])
+        child.initialize()  // PHASE 1 FIX: initialize new child so it sets up state correctly
         if (!state.shadeList) state.shadeList = []
         state.shadeList << motorId
         updateShadesAttribute()
@@ -300,7 +368,13 @@ def ShadeRemove(String motorId) {
         logWarning "Shade ${motorId} does not exist."
         return
     }
-    logInfo "Manually removing shade: ${motorId}"
+    // PHASE 1 FIX: Safety check – verify the child's motorAddress matches the requested motorId
+    def childAddress = child.settings?.motorAddress
+    if (childAddress != motorId) {
+        logWarning "SAFETY CHECK FAILED: Child device '${child.displayName}' has motorAddress '${childAddress ?: 'unset'}', but you requested to remove '${motorId}'. Deletion aborted to prevent removing the wrong device."
+        return
+    }
+    logInfo "Manually removing shade: ${motorId} (Device: ${child.displayName})"
     try {
         deleteChildDevice(child.deviceNetworkId)
         if (state.shadeList) state.shadeList.remove(motorId)
