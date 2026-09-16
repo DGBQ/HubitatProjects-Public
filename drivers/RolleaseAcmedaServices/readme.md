@@ -4,12 +4,12 @@
 
 ## 🔢 Version Control
 
-**Document Control:** 1.1.0
+**Document Control:** 1.2.0\
 **Current Status:** Beta
 
 * **Hub Driver:** `RolleaseAcmedaHub-DGBQ.groovy` (v3.3.24)
 
-* **Shade Driver:** `RolleaseAcmedaShade-DGBQ.groovy` (v2.5.4)\
+* **Shade Driver:** `RolleaseAcmedaShade-DGBQ.groovy` (v2.5.5)\
   **Maintenance Lead:** David Ball-Quenneville (DGBQ)\
   **Original Developer:** Younes Oughla (Yoonoo)
 
@@ -39,7 +39,7 @@ This repository contains a stabilized (in beta) and refined version of the Hubit
 
 The original drivers developed by **Younes Oughla** provided the essential foundation for local IP control, and this project would not exist without that critical early work. As Rollease hardware and Hubitat environments have evolved, I found that my own home setup required a more robust logic framework to maintain peak reliability—especially given the lack of official, open API documentation for home automation hobbyists.
 
-Acting as the **Project Manager** for this overhaul, I utilized **AI** for deep-dive code auditing and technical execution. Together, we performed a "white-hat" analysis of the Hub's communication patterns to smooth out **logic-casting** conflicts that occasionally interrupted command sequences. This personal maintenance branch introduces advanced battery telemetry, RSSI reporting, confirmation-based command retry, and a streamlined shade management API—delivering the level of transparency and "set-and-forget" reliability that modern smart homes demand.
+Acting as the **Project Manager** for this overhaul, I utilized **AI** for deep-dive code auditing and technical execution. Together, we performed a "white-hat" analysis of the Hub's communication patterns to smooth out **logic-casting** conflicts that occasionally interrupted command sequences. This personal maintenance branch introduces advanced battery telemetry, RSSI reporting, confirmation-based command retry with position tolerance, and a streamlined shade management API—delivering the level of transparency and "set-and-forget" reliability that modern smart homes demand.
 
 > **_Insuo Periculo_**: This software is provided "as-is" for personal use; please proceed at your own risk.
 
@@ -59,13 +59,21 @@ Acting as the **Project Manager** for this overhaul, I utilized **AI** for deep-
 
 * **Safe Shade Removal (v3.3.24):** `ShadeRemove` now performs a safety check against the child's `motorAddress` before deletion. If the address does not match, deletion is aborted to prevent accidentally removing the wrong device—a bug that previously caused an unintended loss of a working shade.
 
+* **Retry State Fixes (v2.5.5):** Fixed `unschedule()` calls that were using non-existent method names (`retryCommand` and `jitterRetry`). These were no-ops that left stale timers running. Also added a `commandId` stale-callback guard to prevent race conditions when commands are sent in rapid succession.
+
 ### **New Features & Enhancements**
 
 * **Alexa Responsiveness:** Implemented **Proactive State Updates**. By instantly updating attributes upon command execution, the driver satisfies Alexa's strict response-time windows, eliminating "Device not responding" voice errors.
 
 * **Confirmation-Based Command Retry (v2.5.2):** Commands are now retried only if the Hub does not confirm the target position. Users can configure the retry count and wait time. This dramatically improves reliability in noisy RF environments.
 
+* **Position Tolerance (v2.5.5):** New preference (default ±1%) that allows a shade to be considered "confirmed" when it reaches within tolerance of the target. This eliminates false retries on shades that physically stop 1–2% short of the target—a common occurrence on roman shades and older motors.
+
+* **Intermediate Position Reset (v2.5.5):** If a shade reports an intermediate position while moving, the confirmation timer is now reset (up to 2 times) instead of firing jitter. This gives slow shades time to complete their movement without generating false failure warnings.
+
 * **RF Jitter Workaround (v2.5.2):** If all retries fail, the driver sends a harmless status request to wake the Hub's RF transmitter and then retries the original command. This feature is enabled by default and can be disabled.
+
+* **Log Verbosity Dropdown (v2.5.5):** Replaced the confusing `Enable Debug Logging` and `Enable Description Logging` toggles with a single **Log Verbosity** dropdown (ERROR, WARN, INFO, DEBUG; default INFO). `Auto-Revert Debug` now reverts DEBUG back to INFO after 30 minutes.
 
 * **Advanced Battery Telemetry (v2.5.4):** The battery percentage formula has been recalibrated to **9.5V–12.6V** to closely match the Rollease app (previously 10.8V–12.6V). Testing across eight shades showed typical accuracy within ±5%. A per-shade **Battery Offset** preference remains available for fine-tuning (e.g., for roman vs roller shades with different discharge curves).
 
@@ -101,7 +109,7 @@ For those interested in the "under-the-hood" logic of this fork, I have document
 
 * **[RETR-Hub-Logic](https://./Documentation/RETR-Hub-Logic.md):** Specification for the Telnet stability, error silencing, and Parent driver logic.
 
-* **[RETR-Shade-Logic](https://./Documentation/RETR-Shade-Logic.md):** Specification for the proactive state engine, confirmation-based retry, RF jitter, battery telemetry, and RSSI reporting.
+* **[RETR-Shade-Logic](https://./Documentation/RETR-Shade-Logic.md):** Specification for the proactive state engine, confirmation-based retry, position tolerance, RF jitter, battery telemetry, and RSSI reporting.
 
 * **[ARC Protocol Reference](https://./Documentation/RolleaseAcmedaARCProtocolReference.md):** Detailed reference for the raw ARC commands used by the Pulse 2 Hub.
 
@@ -143,9 +151,11 @@ This driver overhaul was a collaborative effort between a human **Project Manage
 
 | Version   | Date       | Changes                                                                                                                                                                                                                                                              |
 | --------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1.1.0** | 2026-09-11 | Aligned README with Hub v3.3.24 and Shade v2.5.4. Added confirmation-based retry, RF jitter, battery formula recalibration (9.5V–12.6V), Phase 1 bug fixes (child address validation, safe `ShadeRemove`), battery offset guidance, and updated documentation links. |
+| **1.2.0** | 2026-09-16 | Aligned README with Shade v2.5.5. Added Position Tolerance, Intermediate Position Reset, retry state fixes, and Log Verbosity dropdown to Key Improvements. Updated overview to mention position tolerance.                                                          |
+| 1.1.0     | 2026-09-11 | Aligned README with Hub v3.3.24 and Shade v2.5.4. Added confirmation-based retry, RF jitter, battery formula recalibration (9.5V–12.6V), Phase 1 bug fixes (child address validation, safe `ShadeRemove`), battery offset guidance, and updated documentation links. |
 | 1.0.1     | 2026-03-24 | Update links and add more information                                                                                                                                                                                                                                |
 | 1.0.0     | 2026-03-22 | New Readme; Operational Specification Alignment                                                                                                                                                                                                                      |
 
 ***
-s
+
+**End of updated README.md**

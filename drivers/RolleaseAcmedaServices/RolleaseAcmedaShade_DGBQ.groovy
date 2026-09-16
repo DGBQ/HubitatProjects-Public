@@ -21,29 +21,42 @@
  * limitations under the License.
  *
  * Revision History:
+ * v2.5.5 - 2026-09-16 - David Ball-Quenneville
+ *   - PHASE 2A (Retry Logic + Logging UX):
+ *     - Added Position Tolerance preference (default 1, range 0-5). Confirmation now
+ *       accepts a shade within tolerance of the target, eliminating false retries on
+ *       shades that physically stop 1-2% short (BSG, I39).
+ *     - Added intermediate position reset. If the reported position has changed since
+ *       the last report, the confirmation timer is reset (up to 2 times) instead of
+ *       firing jitter. Eliminates false retries on slow shades (UE2, 9E3, XDG).
+ *     - Fixed unschedule() method names: retryCommand -> checkPositionConfirmation,
+ *       jitterRetry -> retryWithJitter. These were no-ops in v2.5.4.
+ *     - Added state.commandId stale-callback guard. Prevents a new command from being
+ *       affected by a stale callback from a previous command.
+ *     - Replaced logEnable and txtEnable with logVerbosity dropdown
+ *       (ERROR, WARN, INFO, DEBUG; default INFO).
+ *     - Auto-Revert Debug now reverts DEBUG to INFO after 30 minutes.
+ *     - Updated logging helpers to check settings.logVerbosity.
+ *
  * v2.5.4 - 2026-09-11 - David Ball-Quenneville
- *   - HOTFIX: Battery voltage‑to‑percentage formula adjusted to better match
- *     the Rollease app. Old range: 10.8V–12.6V. New range: 9.5V–12.6V.
- *     Improves accuracy across all shades (roman and roller, external and
- *     embedded batteries) from ~9–25% error down to ~0–4% error.
+ *   - HOTFIX: Battery voltage-to-percentage formula adjusted to 9.5V-12.6V range.
  *
  * v2.5.3 - 2026-09-02 - David Ball-Quenneville
- *   - Fixed MissingMethodException: logWarn → logWarning.
- *   - Improved jitter ID: uses the shade's own motorAddress instead of getChildDevices().
+ *   - Fixed MissingMethodException: logWarn -> logWarning.
+ *   - Improved jitter ID: uses the shade's own motorAddress.
  *   - Clear pendingTarget on confirmation.
- *   - Retry count now correctly increments when jitter is used.
  *
  * v2.5.2 - 2026-09-02 - David Ball-Quenneville
- *   - Added confirmation‑based retry logic (retries only if hub confirms).
- *   - Added RF Jitter workaround – sends a harmless status request to wake the hub's RF transmitter.
- *   - Grouped retry preferences between Battery Offset and Description Logging.
- *   - Removed Keep Debug Logging On – consolidated into Auto-Revert Debug.
+ *   - Added confirmation-based retry logic.
+ *   - Added RF Jitter workaround.
+ *   - Grouped retry preferences.
+ *   - Removed Keep Debug Logging On.
  *
  * v2.5.1 - 2026-09-02 - David Ball-Quenneville
- *   - Added command retry feature (position‑based, later improved).
+ *   - Added command retry feature.
  *
  * v2.4.4 - 2026-07-25 - David Ball-Quenneville
- *   - Stable baseline – no retry logic.
+ *   - Stable baseline - no retry logic.
  */
 
 metadata {
@@ -51,7 +64,7 @@ metadata {
         name: "Rollease Acmeda Shade",
         namespace: "DGBQ",
         author: "David Ball-Quenneville (based on Younes Oughla previous work)",
-        version: "2.5.4",
+        version: "2.5.5",
         vid: "generic-shade",
         importUrl: ""
     ) {
@@ -60,9 +73,6 @@ metadata {
         capability "Switch Level"
         capability "Window Shade"
         capability "Battery"
-
-        // Removed capability "Switch" – clean UI.
-        // Removed explicit command "on" and "off" – Alexa uses Window Shade capability.
 
         command "stop"
         command "toggle"
@@ -82,6 +92,13 @@ metadata {
         input name: "motorAddress", type: "string", title: "Motor Address", description: "", defaultValue: "000", required: true, displayDuringSetup: true
 
         input name: "batteryOffset", type: "number", title: "Battery Offset (%)", description: "Adjust reported battery percentage (e.g., +15 if fully charged shows 85%). Range -30 to +30.", defaultValue: 0, required: false, displayDuringSetup: false, range: "-30..30"
+
+        input name: "positionTolerance", type: "number",
+            title: "Position Tolerance (%)",
+            description: "Allow the shade to be considered 'confirmed' if it reaches within this percentage of the target. Increase if your shade consistently stops a few percent short. Default: 1. Set to 0 for exact match.",
+            defaultValue: 1,
+            required: false,
+            range: "0..5"
 
         input name: "cmdRetryCount", type: "number",
             title: "Command Retry Count",
@@ -103,11 +120,18 @@ metadata {
             defaultValue: true,
             required: false
 
-        input name: "txtEnable", type: "bool", title: "Enable Description Logging", description: "Human‑readable activity logs", defaultValue: true, required: false, displayDuringSetup: false
+        input name: "logVerbosity", type: "enum",
+            title: "Log Verbosity",
+            description: "Controls the amount of detail written to the log and debug buffer. (Default: INFO)",
+            options: ["ERROR", "WARN", "INFO", "DEBUG"],
+            defaultValue: "INFO",
+            required: false
 
-        input name: "logEnable", type: "bool", title: "Enable Debug Logging", description: "Detailed logs; auto‑off after 30 mins (unless Auto-Revert is disabled)", defaultValue: false, required: false, displayDuringSetup: false
-
-        input name: "autoRevertDebug", type: "bool", title: "Auto-Revert Debug", description: "When enabled, automatically turns off debug logging after 30 minutes. When disabled, debug stays on until manually turned off.", defaultValue: true, required: false, displayDuringSetup: false
+        input name: "autoRevertDebug", type: "bool",
+            title: "Auto-Revert Debug",
+            description: "Automatically reverts Log Verbosity from DEBUG to INFO after 30 minutes. (Default: Enabled)",
+            defaultValue: true,
+            required: false
     }
 }
 
@@ -116,8 +140,8 @@ def installed() {
 }
 
 def updated() {
-    // Cancel auto‑off if debug is off or Auto‑Revert is disabled
-    if (!settings.logEnable || !settings.autoRevertDebug) {
+    // Cancel auto-off if debug is off or Auto-Revert is disabled
+    if (settings.logVerbosity != "DEBUG" || !settings.autoRevertDebug) {
         unschedule("logsOff")
     }
     initialize()
@@ -139,11 +163,12 @@ def initialize() {
         logDebug "Initialized default attributes"
     }
 
-    if (settings.logEnable && settings.autoRevertDebug) {
+    // Log verbosity handling
+    if (settings.logVerbosity == "DEBUG" && settings.autoRevertDebug) {
         runIn(1800, "logsOff")
-        logDebug "Debug logging will auto-disable after 30 minutes (Auto-Revert enabled)"
-    } else if (settings.logEnable && !settings.autoRevertDebug) {
-        logDebug "Debug logging will remain on (Auto-Revert disabled)"
+        logDebug "Log Verbosity will auto-revert to INFO after 30 minutes (Auto-Revert enabled)"
+    } else if (settings.logVerbosity == "DEBUG") {
+        logDebug "Log Verbosity will remain at DEBUG (Auto-Revert disabled)"
     }
 
     // Clear any pending retry state
@@ -151,6 +176,9 @@ def initialize() {
     state.retryCount = 0
     state.confirmed = false
     state.jitterUsed = false
+    state.commandId = (state.commandId ?: 0) + 1
+    state.reportResetCount = 0
+    state.lastReportedPosition = null
 }
 
 def on() { open() }
@@ -217,10 +245,13 @@ def setPosition(position) {
 }
 
 private def sendCommand(String commandString, int target) {
-    // Cancel any pending retry timer
+    // Cancel any pending timers
     unschedule("checkPositionConfirmation")
-    unschedule("retryCommand")
-    unschedule("jitterRetry")
+    unschedule("retryWithJitter")
+
+    // Increment commandId to invalidate any stale callbacks
+    state.commandId = (state.commandId ?: 0) + 1
+    int thisCommandId = state.commandId
 
     // Store target and reset state
     state.pendingTarget = target
@@ -228,10 +259,12 @@ private def sendCommand(String commandString, int target) {
     state.confirmed = false
     state.currentCommand = commandString
     state.jitterUsed = false
+    state.reportResetCount = 0
+    state.lastReportedPosition = null
 
     // Send the command
     parent.sendTelnetCommand(commandString)
-    logDebug "Command sent, waiting for confirmation to ${target}%"
+    logDebug "Command sent, waiting for confirmation to ${target}% (commandId=${thisCommandId})"
 
     // Start confirmation timer
     int waitTime = settings.cmdRetryWait ?: 10
@@ -240,6 +273,7 @@ private def sendCommand(String commandString, int target) {
 
 def checkPositionConfirmation() {
     def target = state.pendingTarget
+    int thisCommandId = state.commandId
 
     if (target == null) {
         logDebug "No pending command to confirm"
@@ -255,21 +289,17 @@ def checkPositionConfirmation() {
         return
     }
 
-    // Not confirmed – retry or use jitter
+    // Not confirmed - retry or use jitter
     int maxRetries = settings.cmdRetryCount ?: 2
     int currentRetry = (state.retryCount ?: 0) + 1
 
     // If jitter hasn't been tried yet, and enabled, do it first
     if (settings.enableJitter && !state.jitterUsed) {
-        logWarning "No confirmation – sending RF jitter to wake hub transmitter"
+        logWarning "No confirmation - sending RF jitter to wake hub transmitter"
         state.jitterUsed = true
-        // Use the current shade's own motor address for the status request
-        // This is guaranteed to be a valid ID known to the hub.
         String jitterId = motorAddress
         parent.sendTelnetCommand("!${jitterId}r?")
-        // Increment retry count so that this jitter attempt counts as a retry
         state.retryCount = currentRetry
-        // Wait 3 seconds, then retry the original command
         runIn(3, "retryWithJitter")
         return
     }
@@ -277,12 +307,12 @@ def checkPositionConfirmation() {
     // If we've already tried jitter or it's disabled, proceed with normal retry
     if (maxRetries > 0 && currentRetry <= maxRetries) {
         state.retryCount = currentRetry
-        logWarning "Position not confirmed – retry ${currentRetry}/${maxRetries}"
+        logWarning "Position not confirmed - retry ${currentRetry}/${maxRetries}"
         parent.sendTelnetCommand(state.currentCommand)
         int waitTime = settings.cmdRetryWait ?: 10
         runIn(waitTime, "checkPositionConfirmation")
     } else {
-        logWarning "Position not confirmed after ${maxRetries} retries – command may have failed"
+        logWarning "Position not confirmed after ${maxRetries} retries - command may have failed"
         state.pendingTarget = null
         state.retryCount = 0
         state.jitterUsed = false
@@ -309,14 +339,15 @@ def stop() {
     logInfo "Command sent: Stop"
     sendEvent(name: "windowShade", value: "partially open")
     sendEvent(name: "moving", value: false)
-    // Cancel any pending retry
+    // Cancel any pending timers
     unschedule("checkPositionConfirmation")
-    unschedule("retryCommand")
-    unschedule("jitterRetry")
+    unschedule("retryWithJitter")
     state.pendingTarget = null
     state.retryCount = 0
     state.confirmed = false
     state.jitterUsed = false
+    state.reportResetCount = 0
+    state.lastReportedPosition = null
     parent.sendTelnetCommand("!${motorAddress}s")
 }
 
@@ -335,7 +366,7 @@ def toggle() {
     }
 }
 
-// ========== Stubs for non‑functional capability commands ==========
+// ========== Stubs for non-functional capability commands ==========
 def startPositionChange(String direction) {
     logInfo "Start Position Change is not supported by this driver. Use Open/Close or Set Position instead."
 }
@@ -358,15 +389,38 @@ def parse(String msg) {
         int position = 100 - Integer.parseInt(posStr)
         positionUpdated(position)
 
-        // If this matches the pending target, mark as confirmed and clear pending
+        // Confirmation logic
         def target = state.pendingTarget
-        if (target != null && position == target) {
-            state.confirmed = true
-            state.pendingTarget = null
-            logDebug "Confirmation received for target ${target}%"
-            unschedule("checkPositionConfirmation")
-            unschedule("retryCommand")
-            unschedule("jitterRetry")
+        int tolerance = (settings.positionTolerance != null) ? settings.positionTolerance.toInteger() : 1
+
+        if (target != null) {
+            // Check if we are within tolerance of the target
+            if (Math.abs(position - target) <= tolerance) {
+                state.confirmed = true
+                state.pendingTarget = null
+                state.reportResetCount = 0
+                state.lastReportedPosition = null
+                logDebug "Confirmation received for target ${target}% (reported ${position}%, tolerance +/-${tolerance}%)"
+                unschedule("checkPositionConfirmation")
+                unschedule("retryWithJitter")
+            } else {
+                // Intermediate position report
+                def lastReported = state.lastReportedPosition
+                if (lastReported == null || lastReported != position) {
+                    state.lastReportedPosition = position
+                    int resetCount = (state.reportResetCount ?: 0)
+                    int maxResets = 2
+                    if (resetCount < maxResets) {
+                        state.reportResetCount = resetCount + 1
+                        logDebug "Intermediate position ${position}% received (target ${target}%) - resetting confirmation timer (${state.reportResetCount}/${maxResets})"
+                        unschedule("checkPositionConfirmation")
+                        int waitTime = settings.cmdRetryWait ?: 10
+                        runIn(waitTime, "checkPositionConfirmation")
+                    } else {
+                        logDebug "Intermediate position ${position}% received but reset limit reached (${resetCount}/${maxResets}) - allowing timer to expire"
+                    }
+                }
+            }
         }
     }
 
@@ -394,8 +448,7 @@ def parse(String msg) {
         try {
             int rawVolt = vStr.toInteger()
             double voltDecimal = rawVolt / 100.0
-            // v2.5.4 HOTFIX: Adjusted voltage range to 9.5V (0%) – 12.6V (100%)
-            // to better match the Rollease app.
+            // v2.5.4 HOTFIX: Adjusted voltage range to 9.5V (0%) - 12.6V (100%)
             double pct = ((voltDecimal - 9.5) / (12.6 - 9.5)) * 100
             int batteryPct = Math.min(Math.max(pct.toInteger(), 0), 100)
             int offset = (settings.batteryOffset != null) ? settings.batteryOffset.toInteger() : 0
@@ -406,7 +459,7 @@ def parse(String msg) {
             sendEvent(name: "battery", value: adjustedPct, unit: "%")
             if (parts.size() > 1) sendEvent(name: "rssi", value: parts[1].trim())
 
-            logDebug "Parsed Success: ${voltDecimal}V, original ${batteryPct}%, offset ${offset} → ${adjustedPct}%, RSSI: ${parts.size() > 1 ? parts[1] : 'N/A'}"
+            logDebug "Parsed Success: ${voltDecimal}V, original ${batteryPct}%, offset ${offset} -> ${adjustedPct}%, RSSI: ${parts.size() > 1 ? parts[1] : 'N/A'}"
         } catch (e) {
             logWarning "Failed to parse voltage string '${vStr}': ${e}"
         }
@@ -447,20 +500,27 @@ def refresh() {
 }
 
 def logsOff() {
-    if (settings.logEnable) {
-        log.warn "Debug logging auto-disabled (Auto-Revert was enabled)"
-        device.updateSetting("logEnable", [value: "false", type: "bool"])
+    if (settings.logVerbosity == "DEBUG") {
+        log.warn "Log Verbosity auto-reverted to INFO (Auto-Revert was enabled)"
+        device.updateSetting("logVerbosity", [value: "INFO", type: "enum"])
     }
 }
 
+// ========== Logging Helpers ==========
+// Order of severity: ERROR (0) < WARN (1) < INFO (2) < DEBUG (3)
+private int getVerbosityLevel() {
+    def levels = ["ERROR": 0, "WARN": 1, "INFO": 2, "DEBUG": 3]
+    return levels[settings.logVerbosity] ?: 2
+}
+
 private def logDebug(message) {
-    if (settings.logEnable) log.debug "${device.name} [DEBUG]: ${message}"
+    if (getVerbosityLevel() >= 3) log.debug "${device.name} [DEBUG]: ${message}"
 }
 private def logInfo(message) {
-    if (settings.txtEnable) log.info "${device.name} [INFO]: ${message}"
+    if (getVerbosityLevel() >= 2) log.info "${device.name} [INFO]: ${message}"
 }
 private def logWarning(message) {
-    log.warn "${device.name} [WARN]: ${message}"
+    if (getVerbosityLevel() >= 1) log.warn "${device.name} [WARN]: ${message}"
 }
 private def logError(message) {
     log.error "${device.name} [ERROR]: ${message}"

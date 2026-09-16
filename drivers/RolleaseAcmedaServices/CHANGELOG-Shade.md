@@ -1,5 +1,16 @@
 # Rollease Acmeda Shade (Child) – CHANGELOG
 
+#### v2.5.5 - 2026-09-16 - David Ball-Quenneville
+- **PHASE 2A – Retry Logic + Logging UX:**
+  - **Added `Position Tolerance` preference** (default 1, range 0–5). The confirmation check now accepts a shade that reaches within ±tolerance of the target, eliminating false retries on shades that physically stop 1–2% short. Real failures (shade stuck far from target) still trigger retries.
+  - **Added intermediate position reset.** If the reported position has changed since the last report, the confirmation timer is reset (up to 2 times) instead of firing jitter. This eliminates false retries on slow shades that report movement progress . After 2 resets, the timer is allowed to expire and normal retry logic takes over.
+  - **Fixed `unschedule()` method names.** `retryCommand` → `checkPositionConfirmation`; `jitterRetry` → `retryWithJitter`. These were no‑ops in v2.5.4 – the timers were never actually cancelled.
+  - **Added `state.commandId` stale‑callback guard.** Incremented on every new command. Scheduled callbacks check it and bail silently if stale. Prevents a new command from triggering the previous command's pending jitter retry.
+  - **Replaced `logEnable` and `txtEnable` with `logVerbosity`** (Enum: ERROR, WARN, INFO, DEBUG; default INFO). Unified logging UI, consistent with modern Hubitat standards.
+  - **Updated `autoRevertDebug`** to revert `Log Verbosity` from `DEBUG` back to `INFO` after 30 minutes.
+  - **Updated logging helpers** to check `settings.logVerbosity` with proper severity ordering.
+- **Verified in production:** BSG, I39, and XDG all confirmed cleanly with no jitter and no retries on the first test after applying.
+
 #### v2.5.4 - 2026-09-11 - David Ball-Quenneville
 - **HOTFIX – Battery Voltage Formula Recalibrated:**
   - Changed the voltage-to-percentage range from **10.8V–12.6V** to **9.5V–12.6V**.
@@ -28,6 +39,14 @@
 - No functional changes – compatible with Hub v3.3.23.
 - Proactive state updates retained.
 - Clean UI (On/Off buttons hidden).
+
+#### Lessons Learned (v2.5.5 – Retry Logic Deep Dive)
+The chatty logs observed in September 2026 on BSG (Kitchen) and I39 (Office) were initially thought to be a workflow problem. A deep-dive analysis revealed three separate issues:
+- **Exact-match confirmation was too strict.** Shades physically stop 1–2% short of the target, and the driver treated this as a failure. The fix is a `Position Tolerance` preference (default ±1%).
+- **Slow shades report intermediate positions.** The driver only recognised the exact target position as "confirmed", ignoring the fact that intermediate reports (e.g., 51% for a 53% target) proved the shade was moving. The fix is an intermediate position reset – up to 2 resets before the timer is allowed to expire.
+- **Latent bugs in the retry state handling.** `unschedule()` was calling non-existent method names, and there was no stale-callback guard. Both fixed in this release.
+
+A full state-machine refactor, jitter reordering, and `RF Jitter Wait Time` preference were designed during the analysis but deliberately deferred – the simpler fixes above were sufficient for the observed behaviour.
 
 #### Lessons Learned (v2.5.x – Retry & Jitter)
 During the development of the retry and jitter logic, we discovered several important issues:

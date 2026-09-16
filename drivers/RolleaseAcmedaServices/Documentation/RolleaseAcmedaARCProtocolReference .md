@@ -2,12 +2,12 @@
 
 ### 🔢 Version Control
 
-**Document Control:** 1.1.0\
+**Document Control:** 1.2.0\
 **Current Releases:** Beta
 
 * **Hub Driver:** `RolleaseAcmedaHub-DGBQ.groovy` (v3.3.24)
 
-* **Shade Driver:** `RolleaseAcmedaShade_DGBQ.groovy` (v2.5.4)\
+* **Shade Driver:** `RolleaseAcmedaShade_DGBQ.groovy` (v2.5.5)\
   **Maintenance Lead:** David Ball-Quenneville (DGBQ)\
   **Original Developer:** Younes Oughla (Yoonoo)
 
@@ -62,7 +62,7 @@ The ARC protocol uses a fixed‑length, text‑based command format. Every comma
 text
 
 ```
-! \[Motor ID (3 chars)] \[Command (1 char)] \[Data (0–3 chars)]
+! [Motor ID (3 chars)] [Command (1 char)] [Data (0–3 chars)]
 ```
 
 **Example:** `!I39m050` moves shade `I39` to 50% closed.
@@ -101,7 +101,7 @@ The hub sends back messages that the parent driver parses and forwards to child 
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
 | `!IDrPPP`        | Position report. `PPP` = 3‑digit inverted position (`000` = open, `100` = closed). The driver converts this to `position` = `100 - PPP`. | `!I39r050` → Shade I39 reported at 50% open. |
 | `!IDmPPP`        | Movement confirmation / target position. Same inversion as above.                                                                        | `!I39m050` → Shade I39 moving to 50% open.   |
-| `!IDpVcVVVV,RRR` | Battery and signal report. `VVVV` = voltage × 100 (e.g., `1228` = 12.28 V). `RRR` = RSSI (e.g., `R67`).                                  | `!I39pVc01228,R67` → 12.28 V, RSSI ‑67 dBm.  |
+| `!IDpVcVVVV,RRR` | Battery and signal report. `VVVV` = voltage × 100 (e.g., `1228` = 12.28 V). `RRR` = RSSI (e.g., `R67`).                                  | `!I39pVc01228,R67` → 12.28 V, RSSI ‑67 dBm.  |
 | `!IDv...`        | Version / status response. Triggers the parent driver's discovery logic when received for `000`.                                         | `!000v...` → Hub version response.           |
 
 > **Note on discovery:** The parent driver's `configure()` and `ShadeDiscover()` methods send `!000v?`. The hub responds with version information and then broadcasts status messages for each shade on the mesh. Each broadcast is parsed by the parent, which creates or updates the corresponding child device. This is why the driver does not need to use the `L` command.
@@ -126,6 +126,8 @@ The **parent hub driver** translates Hubitat commands into ARC strings. The **ch
 | `ShadeRemove(String id)` (Parent)         | _(no ARC command — deletes a local child device only)_ | `ShadeRemove()` (Parent)                            |
 
 > **Important:** `ShadeAdd` and `ShadeRemove` are **Hubitat-side management commands only**. They do not transmit any ARC commands to the Pulse 2 Hub — they simply create or delete child devices in Hubitat. The physical shade pairing must already exist in the Rollease app. The `ShadeRemove` command includes a safety check (v3.3.24) that verifies the child's `motorAddress` matches the requested ID before deletion.
+
+> **Note on retries and jitter (v2.5.5):** When the driver sends a movement command (`!IDm...`), it waits for a position report (`!IDr...`) from the hub. The driver accepts a position within `Position Tolerance` (default ±1%) of the target as confirmation. If the shade reports intermediate positions while moving, the confirmation timer is reset (up to 2 times) to give slow shades time to finish. If no confirmation arrives, the driver retries the original command (up to `Command Retry Count`). If all retries fail and `Enable RF Jitter` is on, the driver sends a status request (`!IDr?`) to wake the hub's RF transmitter, then retries once more. These are all driver-level behaviors — the ARC commands themselves are unchanged.
 
 ***
 
@@ -167,6 +169,10 @@ The per‑shade **Battery Offset** preference (−30 to +30) allows fine‑tunin
 
 * **Command retried multiple times** – The driver retries if the hub fails to confirm the target position. Check the child device's `Command Retry Count` and `Command Retry Wait Time` preferences. If all retries fail and `Enable RF Jitter` is on, the driver sends a status request to wake the hub's transmitter and retries once more.
 
+* **Shade stops 1–2% short of target and triggers retries** – Increase the child device's `Position Tolerance` preference (default 1). This is common on roman shades and older motors that physically cannot hit the exact target.
+
+* **Command retries but the shade is clearly moving** – The `Position Tolerance` preference may need to be increased, or the `Command Retry Wait Time` may be too short for the shade's physical travel time. Slow shades report intermediate positions and the driver now resets the confirmation timer for those reports.
+
 * **`Shade Remove` says "SAFETY CHECK FAILED"** – The child's `Motor Address` does not match the ID you requested to remove. This is intentional (v3.3.24) and prevents deleting the wrong device. Update the `Motor Address` preference directly on the child instead.
 
 ***
@@ -205,10 +211,63 @@ This driver overhaul was a collaborative effort between a human **Project Manage
 
 \<h2 id="revision-history">📜 Revision History\</h2>
 
-| Version  | Date       | Author | Changes                                                                                                                                                                                                                                                                                                                                                   |
-| -------- | ---------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1.10** | 2026-09-11 | DGBQ   | Aligned with Hub v3.3.24 and Shade v2.5.4. Corrected discovery method (`!000v?`, not `!000L?`). Added clarification on `m` command inversion. Added battery reporting section with 9.5V–12.6V calibration. Documented RF Jitter usage of `!IDr?`. Added `ShadeAdd` / `ShadeRemove` note (Hubitat-only). Added `ShadeRemove` safety check troubleshooting. |
-| 1.00     | 2026-04-12 | DGBQ   | Initial release of **Rollease Acmeda ARC Protocol Reference**.                                                                                                                                                                                                                                                                                            |
+| Version   | Date       | Author | Changes                                                                                                                                                                                                                                                                                                                                                    |
+| --------- | ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1.2.0** | 2026-09-16 | DGBQ   | Aligned with Shade v2.5.5. Added note on retries and jitter behaviour to "How the Driver Uses These Commands" section (Position Tolerance, intermediate position reset, retry sequence). Added two new troubleshooting entries: "Shade stops 1–2% short of target" and "Command retries but the shade is clearly moving". No ARC protocol content changed. |
+| 1.1.0     | 2026-09-11 | DGBQ   | Aligned with Hub v3.3.24 and Shade v2.5.4. Corrected discovery method (`!000v?`, not `!000L?`). Added clarification on `m` command inversion. Added battery reporting section with 9.5V–12.6V calibration. Documented RF Jitter usage of `!IDr?`. Added `ShadeAdd` / `ShadeRemove` note (Hubitat-only). Added `ShadeRemove` safety check troubleshooting.  |
+| 1.00      | 2026-04-12 | DGBQ   | Initial release of **Rollease Acmeda ARC Protocol Reference**.                                                                                                                                                                                                                                                                                             |
+
+***
+
+## 📝 Summary of Updates Applied to RolleaseAcmedaARCProtocolReference.md (v1.1.0 → v1.2.0)
+
+### Version Control
+
+* Bumped **Document Control** from `1.1.0` → **`1.2.0`**.
+
+* Bumped **Shade Driver** from `v2.5.4` → **`v2.5.5`**.
+
+### How the Driver Uses These Commands Section
+
+* Added a **new note** titled "Note on retries and jitter (v2.5.5)" that explains:
+
+  * Position Tolerance is applied to the confirmation check.
+
+  * Intermediate position reports reset the confirmation timer (up to 2 times).
+
+  * Retries fire after the timer expires.
+
+  * Jitter fires if all retries fail.
+
+  * Emphasises that these are driver-level behaviours, not ARC protocol changes.
+
+### Troubleshooting Section
+
+* Added **new entry**: "Shade stops 1–2% short of target and triggers retries" → increase `Position Tolerance`.
+
+* Added **new entry**: "Command retries but the shade is clearly moving" → may need higher tolerance or longer retry wait time; slow shades now reset the timer automatically.
+
+* All existing entries preserved.
+
+### Revision History
+
+* Added **v1.2.0** entry (2026-09-16).
+
+* Updated the existing "1.10" entry to **1.1.0** for version number consistency.
+
+### What Did NOT Change
+
+* ARC Command Structure.
+
+* Supported ARC Commands table.
+
+* Response Messages table.
+
+* Battery Reporting Notes (still aligned with v2.5.4 battery hotfix).
+
+* Reference / External Links.
+
+* Disclaimers.
 
 ***
 
