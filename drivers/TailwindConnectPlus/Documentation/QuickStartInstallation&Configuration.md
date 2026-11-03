@@ -8,7 +8,7 @@
 
 | Item                    | Details                                     |
 | ----------------------- | ------------------------------------------- |
-| **Document Control**    | 2.0.0                                       |
+| **Document Control**    | 2.1.0                                       |
 | **Current Release**     | Production Stable                           |
 | **Parent Driver**       | `TailwindConnectPlus.groovy` (v1.3.2)       |
 | **Child Driver**        | `TailwindConnectPlus-Child.groovy` (v1.1.3) |
@@ -19,20 +19,25 @@
 
 ## 📑 Table of Contents
 
-\```
-<summary>Click to expand Table of Contents</summary>
+\<details> \<summary>Click to expand Table of Contents\</summary>
 
-- [🧭 Introduction & Overview](#introduction)
-- [⚠️ Important: Response Time and Polling Behavior](#response-time)
-- [🚀 Quick Start & Installation](#installation)
-- [⚙️ Parent Hub: Command & Configuration Reference](#parent-reference)
-- [🚪 Door (Child): Command & Configuration Reference](#child-reference)
-- [🛠️ Support & Enhancements](#support-and-enhancements)
-- [🛡️ Disclaimers](#disclaimers)
-- [📜 Revision History](#revision-history)
+* 🧭 Introduction & Overview
 
-</details>
-```
+* ⚠️ Important: Response Time and Polling Behavior
+
+* 🚀 Quick Start & Installation
+
+* ⚙️ Parent Hub: Command & Configuration Reference
+
+* 🚪 Door (Child): Command & Configuration Reference
+
+* 🛠️ Support & Enhancements
+
+* 🛡️ Disclaimers
+
+* 📜 Revision History
+
+\</details>
 
 ***
 
@@ -355,6 +360,8 @@ Internal memory points used for driver logic.
 
 11. **No Identify logs appearing:** Set **Log Verbosity** to `INFO` or `DEBUG`. Logs may take a moment to appear due to the asynchronous HTTP request.
 
+12. **Log shows `No route to host` or `Read timed out`:** The Hubitat hub temporarily lost communication with the Tailwind controller (often due to a hub reboot or Wi-Fi hiccup). The driver handles this gracefully. If the errors are from the past, no action is needed. If persistent, check the controller's Wi-Fi signal, verify the IP address, and ensure a DHCP reservation is set in your router.
+
 ***
 
 \<h2 id="child-reference">🚪 Door (Child): Command & Configuration Reference\</h2>
@@ -471,6 +478,7 @@ This driver overhaul was a collaborative effort between a human **Project Manage
 
 | Version   | Date       | Changes                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | --------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **2.1.0** | 2026-11-03 | Fixed the Table of Contents to be plain HTML (removed the incorrect text box). Added a new troubleshooting entry for network errors (`No route to host` / `Read timed out`).                                                                                                                                                                                                                                                     |
 | **2.0.0** | 2026-09-16 | **Major restructure.** Adopted Rollease-style layout: Table of Contents, Introduction & Overview, dedicated Parent Hub Reference section (Commands, Preferences, Current States, State Variables, Troubleshooting), dedicated Door (Child) Reference section, and a proper Support & Enhancements section with a "Helpful Peer" approach. Added response time warning section. Corrected driver file names and folder structure. |
 | **1.3.2** | 2026-09-09 | Updated to v1.3.2. Added Identify command with success logging. Added note about Identify logs taking a moment to appear. Added LED Brightness Control removed note. Added "No Identify logs appearing" to troubleshooting.                                                                                                                                                                                                      |
 | **1.2.0** | 2026-08-31 | Updated to v1.2.7 / v1.1.3. Added Phase 3 features (Preference Descriptions, Command Descriptions, verifySetup, lastOpen/lastClosed, Date/Time Format, Door Status Change INFO Log). Added Known Limitations section.                                                                                                                                                                                                            |
@@ -483,23 +491,12 @@ This driver overhaul was a collaborative effort between a human **Project Manage
 
 ***
 
-## ✅ Summary of Changes for This Document (v2.0.0)
+## ✅ Summary of Changes for This Document (v2.1.0)
 
-| Section                                             | Change                                                                                          |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| **Version Control**                                 | Updated to v2.0.0 – 2026-09-16                                                                  |
-| **Document Control**                                | Bumped from 1.3.2 to 2.0.0                                                                      |
-| **Table of Contents**                               | Added collapsible `<details>` block (new)                                                       |
-| **Introduction & Overview**                         | Rewritten as a proper Introduction with prose and current release highlights                    |
-| **Response Time Warning**                           | Kept as its own dedicated section                                                               |
-| **Quick Start & Installation**                      | Renamed and reorganized (was "Installation")                                                    |
-| **Parent Hub: Command & Configuration Reference**   | New dedicated section (Commands, Preferences, Current States, State Variables, Troubleshooting) |
-| **Door (Child): Command & Configuration Reference** | New dedicated section (Commands, Preferences, Current States, State Variables, Troubleshooting) |
-| **Support & Enhancements**                          | New "Helpful Peer" section (adopted from Rollease)                                              |
-| **Disclaimers**                                     | Restructured (Community, AI Notice, Operational Safety)                                         |
-| **Revision History**                                | Added v2.0.0 entry                                                                              |
-| **Driver file names**                               | Corrected to `TailwindConnectPlus.groovy` and `TailwindConnectPlus-Child.groovy`                |
-| **Removed word "professional"**                     | Throughout the document                                                                         |
-
-***
+| Section                            | Change                                                                     |
+| ---------------------------------- | -------------------------------------------------------------------------- |
+| **Version Control**                | Bumped Document Control from 2.0.0 to 2.1.0                                |
+| **Table of Contents**              | Fixed to use plain HTML (removed the accidental text box wrapper)          |
+| **Troubleshooting (Parent Level)** | Added entry #12 for network errors (`No route to host` / `Read timed out`) |
+| **Revision History**               | Added v2.1.0 entry describing the new troubleshooting entry and ToC fix    |
 
