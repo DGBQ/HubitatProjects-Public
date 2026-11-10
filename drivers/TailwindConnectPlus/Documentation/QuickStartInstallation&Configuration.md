@@ -6,14 +6,14 @@
 
 ## 🔢 Version Control
 
-| Item                    | Details                                     |
-| ----------------------- | ------------------------------------------- |
-| **Document Control**    | 2.1.0                                       |
-| **Current Release**     | Production Stable                           |
-| **Parent Driver**       | `TailwindConnectPlus.groovy` (v1.3.2)       |
-| **Child Driver**        | `TailwindConnectPlus-Child.groovy` (v1.1.3) |
-| **Maintenance Lead**    | David Ball-Quenneville (DGBQ)               |
-| **Original Developers** | dbadge / Gelix                              |
+**Document Control:** 2.2.0\
+**Current Release:** Production Stable
+
+* **Parent Driver:** `TailwindConnectPlus.groovy` (v1.3.2)
+
+* **Child Driver:** `TailwindConnectPlus-Child.groovy` (v1.1.3)\
+  **Maintenance Lead:** David Ball-Quenneville (DGBQ)\
+  **Original Developers:** dbadge / Gelix
 
 ***
 
@@ -289,9 +289,9 @@ Preferences define the communication parameters and logging behavior of the driv
 
 | Preference                           | Detail                                                                              | Requirement   | Default            |
 | ------------------------------------ | ----------------------------------------------------------------------------------- | ------------- | ------------------ |
-| **Tailwind Controller IP**           | The static local IP of your Tailwind controller.                                    | **Mandatory** | None               |
-| **Local Command Key**                | The key from [web.gotailwind.com](https://web.gotailwind.com/) → Local Control Key. | **Mandatory** | None               |
-| **Controller Display Name**          | Name used for the controller in dashboards. Affects child device IDs.               | **Mandatory** | None               |
+| **Tailwind Controller IP**           | The static local IP of your Tailwind controller.                                    | **Mandatory** | _(None)_           |
+| **Local Command Key**                | The key from [web.gotailwind.com](https://web.gotailwind.com/) → Local Control Key. | **Mandatory** | _(None)_           |
+| **Controller Display Name**          | Name used for the controller in dashboards. Affects child device IDs.               | **Mandatory** | _(None)_           |
 | **Number of Doors**                  | How many doors are connected to this controller (0-3).                              | **Mandatory** | `1`                |
 | **Door 1 Name**                      | Name displayed for Door 1 in dashboards.                                            | Optional      | `Door 1`           |
 | **Door 2 Name**                      | Name displayed for Door 2 in dashboards.                                            | Optional      | `Door 2`           |
@@ -356,7 +356,7 @@ Internal memory points used for driver logic.
 
 9. **`driverHealth` shows "failed":** Door didn't reach desired state within timeout. Check for obstructions, sensor issues, or mechanical problems.
 
-10. **`driverHealth` shows "communication\_error":** Controller unreachable. Verify IP address and network connectivity.
+10. **`driverHealth` shows "communication_error":** Controller unreachable. Verify IP address and network connectivity.
 
 11. **No Identify logs appearing:** Set **Log Verbosity** to `INFO` or `DEBUG`. Logs may take a moment to appear due to the asynchronous HTTP request.
 
@@ -476,27 +476,16 @@ This driver overhaul was a collaborative effort between a human **Project Manage
 
 \<h2 id="revision-history">📜 Revision History\</h2>
 
-| Version   | Date       | Changes                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| --------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **2.1.0** | 2026-11-03 | Fixed the Table of Contents to be plain HTML (removed the incorrect text box). Added a new troubleshooting entry for network errors (`No route to host` / `Read timed out`).                                                                                                                                                                                                                                                     |
-| **2.0.0** | 2026-09-16 | **Major restructure.** Adopted Rollease-style layout: Table of Contents, Introduction & Overview, dedicated Parent Hub Reference section (Commands, Preferences, Current States, State Variables, Troubleshooting), dedicated Door (Child) Reference section, and a proper Support & Enhancements section with a "Helpful Peer" approach. Added response time warning section. Corrected driver file names and folder structure. |
-| **1.3.2** | 2026-09-09 | Updated to v1.3.2. Added Identify command with success logging. Added note about Identify logs taking a moment to appear. Added LED Brightness Control removed note. Added "No Identify logs appearing" to troubleshooting.                                                                                                                                                                                                      |
-| **1.2.0** | 2026-08-31 | Updated to v1.2.7 / v1.1.3. Added Phase 3 features (Preference Descriptions, Command Descriptions, verifySetup, lastOpen/lastClosed, Date/Time Format, Door Status Change INFO Log). Added Known Limitations section.                                                                                                                                                                                                            |
-| **1.1.0** | 2026-08-18 | Updated to v1.1.9 / v1.1.1. Added Phase 2 features (Driver Health, Last Error, Last Fetch, Enhanced Status, Watchdog, Initialize Robustness). Removed retry logic from feature list.                                                                                                                                                                                                                                             |
-| **1.0.0** | 2026-08-12 | **Initial DGBQ Fork.** Fixed `toInteger()` error. Added driver header, version constant, `driverVersion` attribute, `refresh` command, auto-revert debug, logging helpers, sectioned preferences. Renamed to Tailwind Connect Plus.                                                                                                                                                                                              |
+| Version   | Date       | Changes                                                                                                                                                                                                                                                                                                                 |
+| --------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **2.2.0** | 2026-11-10 | Aligned document with the new DGBQ SOP. Added standard Version Control block, standard Table of Contents, and updated revision history.                                                                                                                                                                                 |
+| **2.1.0** | 2026-11-03 | Fixed the Table of Contents to be plain HTML. Added a new troubleshooting entry for network errors (`No route to host` / `Read timed out`).                                                                                                                                                                             |
+| **2.0.0** | 2026-09-16 | **Major restructure.** Adopted Rollease-style layout: Table of Contents, Introduction & Overview, dedicated Parent Hub Reference section, dedicated Door (Child) Reference section, and a proper Support & Enhancements section. Added response time warning section. Corrected driver file names and folder structure. |
+| **1.3.2** | 2026-09-09 | Updated to v1.3.2. Added Identify command with success logging. Added note about Identify logs taking a moment to appear. Added LED Brightness Control removed note. Added "No Identify logs appearing" to troubleshooting.                                                                                             |
+| **1.2.0** | 2026-08-31 | Updated to v1.2.7 / v1.1.3. Added Phase 3 features (Preference Descriptions, Command Descriptions, verifySetup, lastOpen/lastClosed, Date/Time Format, Door Status Change INFO Log). Added Known Limitations section.                                                                                                   |
+| **1.1.0** | 2026-08-18 | Updated to v1.1.9 / v1.1.1. Added Phase 2 features (Driver Health, Last Error, Last Fetch, Enhanced Status, Watchdog, Initialize Robustness). Removed retry logic from feature list.                                                                                                                                    |
+| **1.0.0** | 2026-08-12 | **Initial DGBQ Fork.** Fixed `toInteger()` error. Added driver header, version constant, `driverVersion` attribute, `refresh` command, auto-revert debug, logging helpers, sectioned preferences. Renamed to Tailwind Connect Plus.                                                                                     |
 
 ***
 
 **Happy Automating!** 🚀
-
-***
-
-## ✅ Summary of Changes for This Document (v2.1.0)
-
-| Section                            | Change                                                                     |
-| ---------------------------------- | -------------------------------------------------------------------------- |
-| **Version Control**                | Bumped Document Control from 2.0.0 to 2.1.0                                |
-| **Table of Contents**              | Fixed to use plain HTML (removed the accidental text box wrapper)          |
-| **Troubleshooting (Parent Level)** | Added entry #12 for network errors (`No route to host` / `Read timed out`) |
-| **Revision History**               | Added v2.1.0 entry describing the new troubleshooting entry and ToC fix    |
-

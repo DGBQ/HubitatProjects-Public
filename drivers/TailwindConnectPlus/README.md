@@ -6,13 +6,14 @@
 
 ## 🔢 Version Control
 
-| Item                    | Details                                                                                        |
-| ----------------------- | ---------------------------------------------------------------------------------------------- |
-| **Document Control**    | 1.4.0                                                                                          |
-| **Current Status**      | **Production Stable**                                                                          |
-| **Hub Drivers**         | `TailwindConnectPlus.groovy` (Parent v1.3.2) `TailwindConnectPlus-Child.groovy` (Child v1.1.3) |
-| **Maintenance Lead**    | David Ball-Quenneville (DGBQ)                                                                  |
-| **Original Developers** | dbadge / Gelix                                                                                 |
+**Document Control:** 1.5.0\
+**Current Status:** Production Stable
+
+* **Parent Driver:** `TailwindConnectPlus.groovy` (v1.3.2)
+
+* **Child Driver:** `TailwindConnectPlus-Child.groovy` (v1.1.3)\
+  **Maintenance Lead:** David Ball-Quenneville (DGBQ)\
+  **Original Developers:** dbadge / Gelix
 
 ***
 
@@ -38,7 +39,7 @@
 
 \<h2 id="overview">🧭 Overview\</h2>
 
-This repository contains a **a production fork** of the Tailwind Garage Door driver, originally developed by **dbadge** and hosted on **Gelix**'s GitHub repository.
+This repository contains a **production fork** of the Tailwind Garage Door driver, originally developed by **dbadge** and hosted on **Gelix**'s GitHub repository.
 
 The original driver provided the essential foundation for local control of Tailwind Garage Door Controllers using the Tailwind Local API (firmware v9.95+). This fork builds upon that foundation with critical fixes, documentation, and a comprehensive feature roadmap.
 
@@ -88,7 +89,7 @@ Acting as the **Project Manager** for this fork, I performed a deep‑dive code 
 
 * **Error Handling** – Wrapped HTTP calls in try-catch blocks to prevent crashes.
 
-* **Driver Health / Command Status** – Added `driverHealth` attribute to track driver health (normal, failed, timeout, communication\_error).
+* **Driver Health / Command Status** – Added `driverHealth` attribute to track driver health (normal, failed, timeout, communication_error).
 
 * **Last Error Attribute** – Dedicated `lastError` attribute for troubleshooting.
 
@@ -124,7 +125,7 @@ Acting as the **Project Manager** for this fork, I performed a deep‑dive code 
 
 * **Door Status Change INFO Log** – Logs when door status changes from any source (app, remote, driver).
 
-### Phase 4 – Advanced Features (✅ COMPLETED)
+### Phase 4 – UI Cleanup & Finalization (✅ COMPLETED)
 
 * **Hide Internal Commands** – Removed `childOpen` and `childClose` from parent metadata (UI cleanup).
 
@@ -148,16 +149,6 @@ To successfully integrate this driver, you must install the following drivers in
 
 ***
 
-\<h2 id="known-limitations">⚠️ Known Limitations\</h2>
-
-| Limitation                                   | Explanation                                                                                                                                |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **No descriptions for childOpen/childClose** | Hubitat does not support descriptions for commands that take parameters (like `integer`). This is a platform limitation, not a driver bug. |
-| **Removed `poll` Command**                   | The legacy `poll` command has been removed. Use `refresh` instead for manual polling.                                                      |
-| **LED Brightness Control Removed**           | The `/led` endpoint is not available on all Tailwind controller models or firmware versions. This feature has been removed.                |
-
-***
-
 \<h2 id="documentation">📑 Documentation\</h2>
 
 ### Quick Start, Installation, Configuration
@@ -168,13 +159,15 @@ To successfully integrate this driver, you must install the following drivers in
 
 * **[Requirements Document](https://./Documentation/RequirementsDocument.md)** – Project overview, feature roadmap, and complete feature index.
 
-* **[RETR-Tailwind-API.md](https://./Documentation/RETR-Tailwind-API.md)** – Technical deep‑dive on the `toInteger()` fix, Tailwind Local API, status code mapping, and child device architecture.
+* **[RETR-Tailwind-API.md](https://./Documentation/RETR-TailwindConnectPlus-Logic.md)** – Technical deep‑dive on the `toInteger()` fix, Tailwind Local API, status code mapping, and child device architecture.
 
 ### Revision History
 
 Detailed version‑by‑version changes are available in the specific changelog:
 
-* **[CHANGELOG.md](https://./CHANGELOG.md)**
+* **[CHANGELOG-Hub.md](https://./CHANGELOG-Hub.md)**
+
+* **[CHANGELOG-Child.md](https://./CHANGELOG-Child.md)**
 
 ### Archived Legacy Source
 
@@ -190,7 +183,7 @@ These drivers are provided "as‑is" as a service to the Hubitat community. This
 
 ### AI‑Assisted Development Notice
 
-This driver patch was a collaborative effort between a human **Project Manager** and a few **AI**. While AI‑assisted development allows for deep‑dive logic auditing and rapid bug resolution, generative models can occasionally produce code artifacts or logic paths that behave unexpectedly in specific edge cases.
+This driver patch was a collaborative effort between a human **Project Manager** and **AI**. While AI‑assisted development allows for deep‑dive logic auditing and rapid bug resolution, generative models can occasionally produce code artifacts or logic paths that behave unexpectedly in specific edge cases.
 
 * **User Responsibility:** Users should monitor their initial installation to ensure their specific garage door configuration responds as intended.
 
@@ -210,12 +203,11 @@ This driver patch was a collaborative effort between a human **Project Manager**
 
 | Version    | Date       | Changes                                                                                                                                                                                                                                                                                                                      |
 | ---------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1.5.0**  | 2026-11-10 | Aligned README with the new DGBQ SOP. Added standard Version Control block, standard Table of Contents, and updated revision history to reflect the split CHANGELOGs.                                                                                                                                                        |
 | **1.4.0**  | 2026-09-16 | Updated README to correct driver file names (`TailwindConnectPlus.groovy` and `TailwindConnectPlus-Child.groovy`), removed the word "professional", added reference to the archived Legacy Source, and corrected folder structure paths.                                                                                     |
 | **1.3.0**  | 2026-09-09 | Updated README to reflect Phase 4 completion; Current versions: Parent v1.3.2 / Child v1.1.3; Added Phase 4 features; Updated Known Limitations; Updated Production Status                                                                                                                                                   |
 | **1.2.0**  | 2026-08-31 | Updated README to reflect Phase 3 completion; Current versions: Parent v1.2.7 / Child v1.1.3; Added Phase 3 features (Preference Descriptions, Command Descriptions, verifySetup, lastOpen/lastClosed, Date/Time Format, Door Status Change INFO Log); Added Known Limitations section; Updated Production Status            |
 | **1.1.0**  | 2026-08-18 | Updated README to reflect Phase 2 completion; Current versions: Parent v1.1.9 / Child v1.1.1; Phase 3 features updated; Removed retry logic from feature list; Added Driver Health/Command Status                                                                                                                            |
 | **1.0.0**  | 2026-08-12 | **Initial DGBQ Fork** – Fixed `toInteger()` error; Added driver header, version constant, `driverVersion` attribute, `refresh` command, auto-revert debug, logging helpers, sectioned preferences; Renamed to Tailwind Connect Plus; Updated namespace and author; Synced child driver; Created complete documentation suite |
 | **v0.0.0** | Pre-Fork   | Original driver (dbadge / Gelix) – Local API control, up to 3 doors, parent-child architecture, original capabilities                                                                                                                                                                                                        |
-
-***
 
