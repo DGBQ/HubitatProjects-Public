@@ -1,10 +1,14 @@
+Here is the updated **RETR-Shade-Logic.md**.
+
+I have bumped the version to v2.5.9 and added Section 1.7 to document the Phase 3B Event Tracking feature.
+
 # Master Functional Specifications: RETR-Shade-Logic
 
 **File Name:** RETR-Shade-Logic.md (Rollease Engineering Technical Reference Shade Logic)\
 **Project Branch:** The Surgical Observer\
-**Integration Logic:** Child Device Architecture with Proactive State-Engine, Position Tolerance, Confirmation-Based Retry, and RF Jitter\
+**Integration Logic:** Child Device Architecture with Proactive State-Engine, Position Tolerance, Exponential Backoff, Smart Stateful Retry, Actionable Event Tracking, and RF Jitter\
 **Document Status:** Final Production Specification\
-**Driver Version:** 2.5.5
+**Driver Version:** 2.5.9
 
 ***
 
@@ -24,41 +28,41 @@ A critical limitation identified during the "Surgical Observer" audit was the la
 
 * **The Result:** Instant visual feedback for the user and immediate "Success" handshakes for Alexa/Google Home, with the Hub's eventual status burst acting as a background "Surgical Correction" to ensure 100% accuracy.
 
-### 1.3 Confirmation-Based Retry, Position Tolerance & RF Jitter
+### 1.3 Confirmation-Based Retry, Position Tolerance & Smart Stateful Retry
 
 To address occasional RF dropouts and Hub processing delays, v2.5.2 introduced a **confirmation-based retry mechanism**. This replaced an earlier position-based attempt (v2.5.1) that was found to be unreliable.
 
-**How it works (v2.5.5):**
+**How it works (v2.5.9):**
 
-1. After sending a command, the driver stores the target position and starts a confirmation timer (`cmdRetryWait`, default 10s).
+1. After sending a command, the driver stores the target position and starts a **Heartbeat Timer** (8 seconds).
 
-2. When the Hub sends back a position report (`!IDrPPP`) that is within **`Position Tolerance`** of the target (default ±1%), the driver marks the command as **confirmed** and clears all pending state.
+2. **Heartbeat Check:** When the heartbeat fires, the driver evaluates the state:
 
-3. If the position report does not yet match the target but the position has changed since the last report (i.e., the shade is actively moving), the driver **resets the confirmation timer** — up to 2 times per command. This gives slow shades time to finish without firing jitter.
+   * **Deaf:** If no position reports were received, the shade missed the packet. The driver fires the **RF Jitter** immediately to wake it up.
 
-4. If no confirmation arrives before the timer expires (and no intermediate position resets remain), the driver retries the command (up to `cmdRetryCount` times).
+   * **Stuck:** If a position report was received, but the position is identical to where it started, the shade is physically jammed. The driver **aborts** the retry sequence to save RF bandwidth.
 
-5. If all retries are exhausted and **RF Jitter** is enabled, the driver sends a harmless status request (`!IDr?`) using the shade's own `motorAddress` to "wake" the Hub's RF transmitter, then retries the original command once more.
+   * **Moving:** If the position has changed, the shade heard the command and is moving. The driver resets the main confirmation timer.
 
-6. The jitter attempt counts as one of the retry attempts, so the user-configured `cmdRetryCount` is respected.
+3. The driver waits for a position report (`!IDrPPP`) that is within **`Position Tolerance`** of the target (default ±2%) to mark the command as **confirmed**.
 
-**Why Position Tolerance?** Early production logs (2026-09-12, 2026-09-15) showed shades like BSG (Kitchen) and I39 (Office) firing jitter and retries even though they were working correctly. The root cause was an **exact-match confirmation requirement** – shades that physically stop 1–2% short of the target were treated as failures. The `Position Tolerance` preference (introduced in v2.5.5) fixes this without masking real failures.
+4. If the shade reports intermediate positions while moving, the driver resets the confirmation timer (up to 2 times) to give slow shades time to finish.
 
-**Why Intermediate Position Reset?** Slow shades (UE2, 9E3, XDG) report intermediate positions while moving (e.g., 51% on the way to a 53% target). The intermediate reset gives them time to finish without firing jitter, while a stuck position (no change between reports) will still trigger retries.
+5. If no confirmation arrives before the timer expires, the driver retries the command (up to `cmdRetryCount` times).
 
-**Why RF Jitter?** In some environments, the Hub's RF transmitter appears to go idle between commands. Sending a status request forces the Hub to re-activate its transmitter, improving the odds of the following command reaching the shade.
+6. **Exponential Backoff:** The wait time between retries increases by 50% each time (e.g., 20s, 30s, 45s). This prevents flooding the RF repeater during a prolonged shade failure.
+
+7. The jitter attempt counts as one of the retry attempts, so the user-configured `cmdRetryCount` is respected.
+
+**Why Position Tolerance?** Early production logs (2026-09-12, 2026-09-15) showed shades like BSG (Kitchen) and I39 (Office) firing jitter and retries even though they were working correctly. The root cause was an **exact-match confirmation requirement** – shades that physically stop 1–2% short of the target were treated as failures.
+
+**Why Smart Stateful Retry?** In late October 2026, logs showed that the exponential backoff was protecting the repeater, but the driver was still firing unnecessary retries. If a shade was moving slowly (reporting 18% on its way to 50%), the driver would still fire a jitter and retry after 20 seconds because the target hadn't been reached. The Heartbeat Check solves this by verifying movement _before_ the timer expires.
 
 ### 1.4 UI Clarity & Alexa Compatibility (v2.4.2 onwards)
 
 In v2.4.0, the `Switch` capability was removed to hide the `On`/`Off` UI buttons. Initially, we added explicit `command "on"` and `command "off"` declarations to keep Alexa functional, but these still appeared as buttons.
 
-In v2.4.2, those explicit command declarations were removed entirely. Alexa now uses the native `Window Shade` and `Switch Level` capabilities directly:
-
-* **`open()`** and **`close()`** are called by Alexa via the `Window Shade` capability.
-
-* **`setLevel()`** is called by Alexa via the `Switch Level` capability.
-
-* The `on()` and `off()` methods remain in the code for internal/automation use, but they are no longer exposed as UI buttons.
+In v2.4.2, those explicit command declarations were removed entirely. Alexa now uses the native `Window Shade` and `Switch Level` capabilities directly.
 
 **Result:**
 
@@ -70,74 +74,68 @@ In v2.4.2, those explicit command declarations were removed entirely. Alexa now 
 
 ### 1.5 Battery Formula Recalibration (v2.5.4 Hotfix)
 
-Early battery reporting used a linear formula mapping **10.8V = 0%** and **12.6V = 100%**. After comparing against the Rollease app across eight shades (roman and roller, external and embedded batteries), we observed a consistent gap where the app reported **higher** percentages than our driver, with the gap growing as voltage dropped (from +9% at 12.28V to +25% at 11.57V).
+Early battery reporting used a linear formula mapping **10.8V = 0%** and **12.6V = 100%**. After comparing against the Rollease app across eight shades, we observed a consistent gap where the app reported **higher** percentages than our driver.
 
-The formula was recalibrated to use **9.5V = 0%** and **12.6V = 100%**. Testing after the change showed all eight shades within **±5%** of the app, with most reading conservatively (slightly below the app). The `Battery Offset` preference remains available for per-shade fine-tuning.
+The formula was recalibrated to use **9.5V = 0%** and **12.6V = 100%**. Testing after the change showed all eight shades within **±5%** of the app. The `Battery Offset` preference remains available for per-shade fine-tuning.
 
 ### 1.6 Log Verbosity Dropdown (v2.5.5)
 
-In v2.5.5 the confusing boolean logging preferences (`Enable Debug Logging`, `Enable Description Logging`) were replaced with a single **Log Verbosity** dropdown (ERROR, WARN, INFO, DEBUG). This unifies the logging UI with modern Hubitat standards and eliminates the ambiguity between the two toggles. The `Auto-Revert Debug` preference now reverts `Log Verbosity` from `DEBUG` back to `INFO` after 30 minutes.
+In v2.5.5 the confusing boolean logging preferences were replaced with a single **Log Verbosity** dropdown (ERROR, WARN, INFO, DEBUG). The `Auto-Revert Debug` preference now reverts `Log Verbosity` from `DEBUG` back to `INFO` after 30 minutes.
+
+### 1.7 Actionable Event Tracking (v2.5.9)
+
+While the driver was stable, users wanted to write automations based on specific failure states. The existing global `lastAction` on the Parent hub was not granular enough. Phase 3B introduced two new attributes: `lastEvent` and `lastUpdate`.
+
+`lastEvent` tracks the current state of the device (e.g., `command_sent`, `jitter`, `failed`). `lastUpdate` records the timestamp of the last successful data burst. This allows users to write precise automations, such as receiving a push notification if a shade's battery dies and it goes completely silent.
 
 ***
 
 ## 2. Full Command API (Methods)
 
-The following commands represent the "DGBQ" optimized interface, ensuring protocol-compliant communication with the Parent Hub.
-
 ### 2.1 Standard Movement Commands
 
-* **`open()`**: Initiates a full ascent. **Proactive Action:** Immediately sets `windowShade` to `opening` and `position` to `100`. Logs `Command sent: Opening` at INFO level.
+* **`open()`**: Initiates a full ascent. Proactively sets `windowShade` to `opening` and `position` to `100`.
 
-* **`close()`**: Initiates a full descent. **Proactive Action:** Immediately sets `windowShade` to `closing` and `position` to `0`. Logs `Command sent: Closing` at INFO level.
+* **`close()`**: Initiates a full descent. Proactively sets `windowShade` to `closing` and `position` to `0`.
 
-* **`setPosition(level)`**: Moves the shade to a specific percentage.
+* **`setPosition(level)`**: Moves the shade to a specific percentage. Includes an "Already-at-Target" check.
 
-  * **Optimization:** Includes an "Already-at-Target" check. If the requested position matches the current state, the driver suppresses the RF command to reduce Hub congestion while still refreshing the Hubitat state.
+* **`stop()`**: Interrupts current movement. Cancels any pending retry timers and clears retry state.
 
-  * **Logging:** Logs `Command sent: Moving to X%` at INFO level.
+* **`toggle()`**: Cycles through `open` → `stop` → `close` logic based on `lastDirection`.
 
-* **`stop()`**: Interrupts current movement. Resets the `moving` flag to `false` and sets the state to `partially open`. Also cancels any pending retry timers and clears retry state. Logs `Command sent: Stop` at INFO level.
-
-* **`toggle()`**: A convenience method that cycles through `open` → `stop` → `close` logic based on the `lastDirection` variable.
-
-* **`requestBatteryStatus()`**: Forces the Hub to send a fresh battery and signal report. Immediately updates `battery`, `batteryVoltage`, `voltage`, and `rssi`. Logs `Requesting battery status from hub` at INFO level.
+* **`requestBatteryStatus()`**: Forces the Hub to send a fresh battery and signal report.
 
 ### 2.2 Compatibility Aliases
 
-* **`on()` / `off()`**: Maps directly to `open()` and `close()`. These methods are retained for internal use and automation calls, but they are **not** exposed as UI buttons (v2.4.2).
+* **`on()` / `off()`**: Maps directly to `open()` and `close()`. Retained for internal/automation use, but not exposed as UI buttons.
 
-* **`setLevel(level)`**: Required for `Switch Level` capability; maps to `setPosition()`. The optional `duration` parameter is ignored and logs a warning if non-zero.
+* **`setLevel(level)`**: Required for `Switch Level` capability; maps to `setPosition()`.
 
 ### 2.3 Non-Functional Capability Stubs
 
-The following commands are provided by Hubitat capabilities but are **not supported** by this driver. They log an informational message when invoked:
+* **`startPositionChange(String direction)`**: Logs an informational message (not supported by ARC).
 
-* **`startPositionChange(String direction)`**: Logs "Start Position Change is not supported by this driver. Use Open/Close or Set Position instead."
-
-* **`stopPositionChange()`**: Logs "Stop Position Change is not supported by this driver. Use Stop instead."
+* **`stopPositionChange()`**: Logs an informational message (not supported by ARC).
 
 ***
 
 ## 3. User Preferences & Configuration
 
-These inputs define the child device's unique identity on the ARC mesh, its retry behaviour, and its logging behaviour.
-
-| Preference                  | Format  | Default      | Description                                                                                                                                                                                           |
-| --------------------------- | ------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Motor Address**           | String  | 000          | The unique 3-character alphanumeric ID (e.g., `A1C`) assigned by the Hub. Set automatically by the Parent when the child is created.                                                                  |
-| **Battery Offset**          | Number  | 0            | Adjusts reported battery percentage by a fixed amount (−30 to +30). Use for calibrating against the official Rollease app when the default formula and the app differ by a few percent.               |
-| **Position Tolerance**      | Number  | 1            | Allow the shade to be considered "confirmed" if it reaches within this percentage of the target. Increase if your shade consistently stops a few percent short. Range: 0–5. Set to 0 for exact match. |
-| **Command Retry Count**     | Number  | 2            | Number of retries if a command fails to receive confirmation. Set to `0` to disable retries. Range: 0–5.                                                                                              |
-| **Command Retry Wait Time** | Number  | 10 (seconds) | Time to wait before retrying a command. A longer wait gives the shade more time to respond. Range: 5–30.                                                                                              |
-| **Enable RF Jitter**        | Boolean | True         | If a command fails after all retries, send a harmless status request to wake the Hub's RF transmitter, then retry once more.                                                                          |
-| **Log Verbosity**           | Enum    | INFO         | Controls the amount of detail written to the log and debug buffer. Options: `ERROR`, `WARN`, `INFO`, `DEBUG`.                                                                                         |
-| **Auto-Revert Debug**       | Boolean | True         | Automatically reverts `Log Verbosity` from `DEBUG` to `INFO` after 30 minutes.                                                                                                                        |
+| Preference                  | Format  | Default | Description                                                                                                  |
+| --------------------------- | ------- | ------- | ------------------------------------------------------------------------------------------------------------ |
+| **Motor Address**           | String  | 000     | The unique 3-character alphanumeric ID.                                                                      |
+| **Battery Offset**          | Number  | 0       | Adjusts reported battery percentage (−30 to +30).                                                            |
+| **Position Tolerance**      | Number  | 2       | Allow the shade to be considered "confirmed" if it reaches within this percentage of the target. Range: 0–5. |
+| **Command Retry Count**     | Enum    | 2       | Number of retries if a command fails to receive confirmation. Options: 0, 1, 2, 3.                           |
+| **Command Retry Wait Time** | Number  | 20      | Time to wait before retrying. The wait time increases by 50% for each subsequent retry. Range: 5–30.         |
+| **Enable RF Jitter**        | Boolean | True    | If a command fails after all retries, send a harmless status request to wake the Hub's RF transmitter.       |
+| **Log Verbosity**           | Enum    | INFO    | Controls the amount of detail written to the log. Options: ERROR, WARN, INFO, DEBUG.                         |
+| **Auto-Revert Debug**       | Boolean | True    | Automatically reverts Log Verbosity from DEBUG to INFO after 30 minutes.                                     |
 
 ***
 
 ## 4. Telemetry & Current States (Attributes)
-
-The "Surgical Observer" branch significantly expands the telemetry captured from the Hub's data bursts.
 
 ### 4.1 Primary Motion Attributes
 
@@ -149,45 +147,47 @@ The "Surgical Observer" branch significantly expands the telemetry captured from
 
 * **`open` / `closed`**: Binary states indicating if the shade has reached its upper or lower limit.
 
-* **`switch`**: Mirrors the power-style state (`on` if position > 0, `off` if position = 0). Provided for compatibility even though the `Switch` capability is not exposed in the UI.
+* **`switch`**: Mirrors the power-style state. Provided for compatibility.
+
+* **`lastEvent`**: The most recent event for this shade. Values: `idle`, `command_sent`, `position_confirmed`, `retry`, `jitter`, `failed`, `stopped`, `battery_report`.
+
+* **`lastUpdate`**: Timestamp of the last successful data burst from the shade.
 
 ### 4.2 Power & Signal Telemetry
 
-* **`battery`**: Calculated percentage based on the linear mapping (9.5V = 0%, 12.6V = 100%). Matches the Rollease app within ±5% across tested shades. Fine-tune with `Battery Offset` if needed.
+* **`battery`**: Calculated percentage based on the linear mapping (9.5V = 0%, 12.6V = 100%).
 
 * **`batteryVoltage`**: The decoded decimal voltage (e.g., `12.04V`).
 
-* **`voltage`**: The raw integer value received from the Hub burst (e.g., `1204`).
+* **`voltage`**: The raw integer value received from the Hub burst.
 
-* **`rssi`**: The signal strength indicator (e.g., `R75`), allowing for mesh health diagnostics.
+* **`rssi`**: The signal strength indicator (e.g., `R75`).
 
 ***
 
 ## 5. Internal Logic & State Variables
 
-The child driver uses a small set of state variables to manage movement, retries, and confirmation tracking.
+* **`state.lastDirection`**: Tracks the most recent movement.
 
-* **`state.lastDirection`**: Tracks the most recent movement (`opening` or `closing`) to ensure the `toggle()` command operates intuitively.
+* **`state.lastLoggedPosition`**: Prevents duplicate position confirmation logs.
 
-* **`state.lastLoggedPosition`**: Stores the last position that was logged as `INFO`. Prevents duplicate position confirmation logs when the Hub sends multiple identical status bursts.
-
-* **`state.pendingTarget`**: The position currently awaiting confirmation from the Hub. Cleared on confirmation or when retries are exhausted.
+* **`state.pendingTarget`**: The position currently awaiting confirmation.
 
 * **`state.retryCount`**: Number of retries attempted for the current command.
 
 * **`state.confirmed`**: Boolean set when the Hub confirms the target position.
 
-* **`state.jitterUsed`**: Tracks whether RF Jitter has been sent for the current command (so it is only sent once per command).
+* **`state.jitterUsed`**: Tracks whether RF Jitter has been sent.
 
 * **`state.currentCommand`**: The ARC string last sent (used to resend on retry).
 
-* **`state.commandId`**: Incremented on every new command. Used to invalidate stale callbacks from previous commands (prevents race conditions).
+* **`state.commandId`**: Incremented on every new command. Used to invalidate stale callbacks.
 
-* **`state.reportResetCount`**: Number of times the confirmation timer has been reset due to intermediate position reports (max 2 per command).
+* **`state.reportResetCount`**: Number of times the confirmation timer has been reset due to intermediate position reports.
 
-* **`state.lastReportedPosition`**: The last position reported by the Hub. Used to detect whether the position has actually changed since the previous report.
+* **`state.lastReportedPosition`**: The last position reported by the Hub.
 
-* **Attribute Seeding:** Upon installation or initialization, the driver "seeds" default values (Position 0, Closed) to ensure Alexa has a baseline state before the first Hub report is received.
+* **`state.lastHeartbeatPosition`**: The position recorded at the 8-second Heartbeat Check to determine if the shade is moving or stuck.
 
 ***
 
@@ -195,43 +195,49 @@ The child driver uses a small set of state variables to manage movement, retries
 
 ### 6.1 Data Validation & Sanitization
 
-The driver employs a "Surgical" approach to incoming Hub data:
-
-* **Zero-Padding:** All outgoing position commands are automatically padded to three digits (e.g., `50` becomes `050`) to prevent ARC protocol rejection.
-
-* **Type Casting:** Advanced handling for `String` vs `Integer` inputs in `setPosition` and `setLevel` to prevent "GroovyCast" exceptions.
-
-* **Voltage Mapping:** Battery percentage is calculated using a calibrated 9.5V (0%) to 12.6V (100%) scale.
-
-* **Safe Preference Access:** All preferences are read using `settings.` prefix to ensure reliable access across driver versions.
+The driver employs a "Surgical" approach to incoming Hub data. Zero-padding, type casting, and safe preference access are applied everywhere.
 
 ### 6.2 Intelligent Parsing
 
-The `parse()` method is designed to handle multi-part data bursts. It splits the raw `pVc` string into discrete components, stripping leading zeros and applying "Try-Catch" blocks to prevent the driver from crashing on malformed Hub reports.
+The `parse()` method handles multi-part data bursts, stripping leading zeros and applying "Try-Catch" blocks to prevent crashes on malformed reports.
 
 ### 6.3 Position Confirmation Deduplication
 
-The driver uses `state.lastLoggedPosition` to ensure that `Position confirmed:` logs are only emitted when the position actually changes. This prevents log clutter from duplicate status bursts.
+The driver uses `state.lastLoggedPosition` to ensure that confirmation logs are only emitted when the position actually changes.
 
 ### 6.4 Retry State Hygiene
 
-Every time a command is sent via `sendCommand()`, all retry-related timers are unscheduled and state variables are reset. On confirmation, `pendingTarget` is immediately cleared. On `stop()`, all retry state is wiped. This prevents stale state from earlier commands interfering with later ones.
+Every time a command is sent, all retry-related timers are unscheduled and state variables are reset. On confirmation, `pendingTarget` is immediately cleared.
 
 ### 6.5 Jitter Safety
 
-The jitter request uses the shade's own `motorAddress` – never another shade's ID. This guarantees the request is always valid and never accidentally triggers movement on a different shade.
+The jitter request uses the shade's own `motorAddress` – never another shade's ID.
 
 ### 6.6 Stale-Callback Guard (`commandId`)
 
-Every scheduled callback (`checkPositionConfirmation`, `retryWithJitter`) captures the `commandId` at the time it was scheduled. When the callback fires, it compares the captured ID against the current `state.commandId`. If they differ, the callback bails silently. This eliminates the race condition where a new command could trigger the previous command's pending jitter retry. This guard was added in v2.5.5.
+Every scheduled callback captures the `commandId`. When the callback fires, it compares the captured ID against the current `state.commandId`. If they differ, the callback bails silently.
 
 ### 6.7 Intermediate Position Reset Guard
 
-To prevent an infinite reset loop when a shade is stuck at a position but keeps reporting it, the intermediate position reset is capped at **2 resets per command**. Additionally, the timer only resets if the reported position has **changed** since the previous report. If the position is unchanged, the timer is allowed to expire and normal retry logic takes over. This guard was added in v2.5.5.
+To prevent an infinite reset loop when a shade is stuck, the intermediate position reset is capped at **2 resets per command**. The timer only resets if the reported position has **changed**.
 
 ### 6.8 `unschedule()` Method Name Accuracy
 
-In v2.5.5 the `unschedule()` calls were corrected. Previous versions called `unschedule("retryCommand")` and `unschedule("jitterRetry")`, but the actual scheduled methods are `checkPositionConfirmation` and `retryWithJitter`. Those calls were no-ops. This is now fixed.
+The `unschedule()` calls were corrected in v2.5.5 to match the actual scheduled methods.
+
+### 6.9 Exponential Backoff & Repeater Protection
+
+In v2.5.7, the retry logic was updated to protect the RF repeater from being flooded. The driver increases the wait time between retries by 50% each time.
+
+### 6.10 Smart Stateful Retry (Heartbeat Check)
+
+In v2.5.8, the driver introduced an 8-second Heartbeat Check before the main confirmation timer expires.
+
+* **Deaf:** No reports -> Fire Jitter.
+
+* **Moving:** Position changed -> Reset timer.
+
+* **Stuck:** Position unchanged -> Abort retries to save RF bandwidth.
 
 ***
 
@@ -241,99 +247,74 @@ In v2.5.5 the `unschedule()` calls were corrected. Previous versions called `uns
 
 * **Lineage:** Optimized fork of the Younes Oughla (arcautomate) original branch.
 
-* **Current Driver Version:** 2.5.5
+* **Current Driver Version:** 2.5.9
 
-* **Key Enhancements (v2.5.1 – v2.5.5):**
+* **Key Enhancements (v2.5.1 – v2.5.9):**
 
-  * **v2.5.1** – Initial position-based retry feature (later superseded).
+  * **v2.5.1** – Initial position-based retry feature.
 
-  * **v2.5.2** – Confirmation-based retry logic, RF Jitter workaround, new preferences (`Command Retry Count`, `Command Retry Wait Time`, `Enable RF Jitter`), debug preference consolidation.
+  * **v2.5.2** – Confirmation-based retry logic, RF Jitter workaround.
 
-  * **v2.5.3** – Fixed `logWarn` → `logWarning` bug that crashed retry logic, improved jitter ID selection to use the shade's own `motorAddress`, cleared `pendingTarget` on confirmation, counted jitter as one retry.
+  * **v2.5.3** – Fixed `logWarn` → `logWarning` bug.
 
-  * **v2.5.4** – Battery formula recalibrated from 10.8V–12.6V to 9.5V–12.6V to match the Rollease app within ±5%.
+  * **v2.5.4** – Battery formula recalibrated to 9.5V–12.6V.
 
-  * **v2.5.5** – Added `Position Tolerance` preference, added intermediate position reset, fixed `unschedule()` method names, added `commandId` stale-callback guard, replaced logging toggles with `Log Verbosity` dropdown, updated `Auto-Revert Debug` to revert `DEBUG` back to `INFO`.
+  * **v2.5.5** – Added `Position Tolerance`, intermediate position reset, fixed `unschedule()`, added `commandId` guard, replaced logging toggles with `Log Verbosity`.
+
+  * **v2.5.7** – Changed defaults (Tolerance 2, Wait 20s), added Enum for retry count, added Exponential Backoff (50% increase per retry) and Repeater Protection.
+
+  * **v2.5.8** – Added Smart Stateful Retry (8-second Heartbeat Check) to differentiate between Deaf, Moving, and Stuck shades.
+
+  * **v2.5.9** – Added Actionable Event Tracking (`lastEvent` and `lastUpdate`).
 
 ### Lessons Learned (v2.5.x)
 
-* **`logWarn` vs `logWarning`** – a typo in the logging helper name silently killed the retry logic. Fixed in v2.5.3.
+* **`logWarn` vs `logWarning`** – a typo silently killed the retry logic.
 
-* **`getChildDevices()` in a child driver** – always returns empty. Jitter ID selection now uses the shade's own `motorAddress`.
+* **`getChildDevices()` in a child driver** – always returns empty. Use the shade's own `motorAddress`.
 
-* **Jitter must count as a retry** – otherwise the user's `cmdRetryCount` is not respected.
+* **Jitter must count as a retry** – otherwise `cmdRetryCount` is not respected.
 
-* **State hygiene matters** – `pendingTarget` must be cleared on confirmation to prevent stale state from interfering with later commands.
+* **State hygiene matters** – `pendingTarget` must be cleared on confirmation.
 
-* **Do not use `ShadeRemove` to swap addresses** – the Parent's safety check (v3.3.24) prevents this, but the recommended approach is to update the `motorAddress` preference directly on the child.
+* **Do not use `ShadeRemove` to swap addresses** – update the `motorAddress` preference directly.
 
-* **Exact-match confirmation is too strict** – shades physically stop 1–2% short of the target. The `Position Tolerance` preference (v2.5.5) fixes false retries without masking real failures.
+* **Exact-match confirmation is too strict** – `Position Tolerance` fixes false retries.
 
-* **Slow shades report intermediate positions** – the driver must accept these as evidence of progress, not as a reason to fire jitter. The intermediate position reset (v2.5.5) handles this.
+* **Slow shades report intermediate positions** – the intermediate position reset handles this.
 
-* **`unschedule()` method names must match scheduled methods exactly** – the previous incorrect names were silent no-ops. Fixed in v2.5.5.
+* **`unschedule()` method names must match exactly** – incorrect names were silent no-ops.
 
-* **Stale callbacks are a real race condition** – the `commandId` guard (v2.5.5) prevents a new command from being affected by a previous command's pending callback.
+* **Stale callbacks are a real race condition** – the `commandId` guard prevents this.
 
-***
+* **Retry floods can crash the repeater** – Exponential Backoff prevents this.
 
-## 📝 Summary of Updates Applied to RETR-Shade-Logic.md (v2.5.4 → v2.5.5)
+* **Blind retries waste RF bandwidth** – The Heartbeat Check ensures we only retry a shade that is actually deaf or stuck.
 
-### Version Control
-
-* Bumped **Driver Version** from `2.5.4` → **`2.5.5`**.
-
-* Updated **Integration Logic** description to include **Position Tolerance**.
-
-### Section 1 – Project Context
-
-* **Section 1.3** retitled from "Confirmation-Based Retry & RF Jitter (v2.5.2)" to "Confirmation-Based Retry, Position Tolerance & RF Jitter". Rewrote the "How it works" sequence to reflect the v2.5.5 flow: position tolerance in step 2, intermediate reset in step 3.
-
-* **Section 1.3** added explanations for why position tolerance and intermediate position reset exist.
-
-* **Section 1.6** (new) added: "Log Verbosity Dropdown (v2.5.5)" – replaces the two boolean logging preferences with a single dropdown.
-
-### Section 3 – User Preferences
-
-* **Added** `Position Tolerance` preference row.
-
-* **Replaced** `Enable Description Logging`, `Enable Debug Logging`, `Auto-Revert Debug` rows with `Log Verbosity` (Enum) and updated `Auto-Revert Debug` row.
-
-* **Removed** the "Planned change (Phase 2)" note – the change has been applied.
-
-### Section 5 – Internal Logic & State Variables
-
-* **Added** `state.commandId`.
-
-* **Added** `state.reportResetCount`.
-
-* **Added** `state.lastReportedPosition`.
-
-### Section 6 – Logic Guardrails
-
-* **Section 6.6** (new) – Stale-Callback Guard (`commandId`).
-
-* **Section 6.7** (new) – Intermediate Position Reset Guard (max 2 resets, position must change).
-
-* **Section 6.8** (new) – `unschedule()` Method Name Accuracy.
-
-### Section 7 – Versioning & Lineage
-
-* **Bumped** Current Driver Version to 2.5.5.
-
-* **Added v2.5.5** entry to Key Enhancements.
-
-* **Added three new Lessons Learned entries** (exact-match confirmation, intermediate positions, unschedule names, stale callbacks).
-
-### What Did NOT Change
-
-* Section 1.1, 1.2, 1.4, 1.5 (project context, Alexa timeout, UI clarity, battery recalibration).
-
-* Section 2 (Full Command API) – the command API itself is unchanged; only the retry behaviour described under Commands changed slightly (covered in the Retry Behaviour note within Section 1.3).
-
-* Section 4 (Telemetry & Current States) – unchanged.
-
-* Sections 6.1–6.5 – unchanged.
+* **Global attributes are not enough** – `lastEvent` provides per-shade granularity for automations.
 
 ***
 
+## 📝 Summary of Updates Applied to RETR-Shade-Logic.md (v2.5.8 → v2.5.9)
+
+**Version Control:**
+
+* Bumped **Driver Version** from `2.5.8` → **`2.5.9`**.
+
+* Updated **Integration Logic** description to include **Actionable Event Tracking**.
+
+**Section 1 – Project Context:**
+
+* **Section 1.7** (new) – **Actionable Event Tracking (v2.5.9)**. Documents the addition of `lastEvent` and `lastUpdate`.
+
+**Section 4 – Telemetry & Current States:**
+
+* Added `lastEvent` and `lastUpdate` to the attributes list.
+
+**Section 7 – Versioning & Lineage:**
+
+* Bumped Current Driver Version to 2.5.9.
+
+* Added **v2.5.9** to Key Enhancements.
+
+* Added new Lessons Learned entry about per-shade granularity.

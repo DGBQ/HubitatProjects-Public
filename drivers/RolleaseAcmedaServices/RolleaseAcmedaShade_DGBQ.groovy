@@ -3,7 +3,8 @@
  * Type: Child Driver
  * Purpose: Represents a single shade motor. Receives commands from the parent hub driver
  *          and updates its state. Features proactive state updates to satisfy Alexa's
- *          response time requirements. Includes confirmation‑based retry and RF jitter.
+ *          response time requirements. Includes Smart Stateful Retry (Heartbeat Check),
+ *          exponential backoff, RF jitter, and actionable event tracking.
  *
  * Author: David Ball-Quenneville (maintainer, based on Younes Oughla previous work)
  * Copyright 2026 David Ball-Quenneville
@@ -21,42 +22,31 @@
  * limitations under the License.
  *
  * Revision History:
+ * v2.5.9 - 2026-11-04 - David Ball-Quenneville
+ *   - PHASE 3B: Added Actionable Event Tracking (lastEvent, lastUpdate).
+ *   - Added sendEvent calls across sendCommand, checkHeartbeat, checkPositionConfirmation,
+ *     retryWithJitter, stop, and parse to update these attributes.
+ *
+ * v2.5.8 - 2026-10-28 - David Ball-Quenneville
+ *   - HOTFIX 3: Smart Stateful Retry (Heartbeat Check)
+ *   - Added checkHeartbeat() to differentiate between Deaf, Moving, and Stuck shades.
+ *   - Added state.lastHeartbeatPosition to track movement at the 8-second mark.
+ *
+ * v2.5.7 - 2026-10-23 - David Ball-Quenneville
+ *   - HOTFIX: Exponential Backoff & Repeater Protection
+ *   - Changed default positionTolerance to 2.
+ *   - Changed default cmdRetryWait to 20.
+ *   - Changed cmdRetryCount to an Enum dropdown (0, 1, 2, 3).
+ *   - Implemented 50% exponential backoff on retries.
+ *   - Capped total retries to prevent flooding the RF repeater.
+ *
  * v2.5.5 - 2026-09-16 - David Ball-Quenneville
- *   - PHASE 2A (Retry Logic + Logging UX):
- *     - Added Position Tolerance preference (default 1, range 0-5). Confirmation now
- *       accepts a shade within tolerance of the target, eliminating false retries on
- *       shades that physically stop 1-2% short (BSG, I39).
- *     - Added intermediate position reset. If the reported position has changed since
- *       the last report, the confirmation timer is reset (up to 2 times) instead of
- *       firing jitter. Eliminates false retries on slow shades (UE2, 9E3, XDG).
- *     - Fixed unschedule() method names: retryCommand -> checkPositionConfirmation,
- *       jitterRetry -> retryWithJitter. These were no-ops in v2.5.4.
- *     - Added state.commandId stale-callback guard. Prevents a new command from being
- *       affected by a stale callback from a previous command.
- *     - Replaced logEnable and txtEnable with logVerbosity dropdown
- *       (ERROR, WARN, INFO, DEBUG; default INFO).
- *     - Auto-Revert Debug now reverts DEBUG to INFO after 30 minutes.
- *     - Updated logging helpers to check settings.logVerbosity.
+ *   - Added Position Tolerance and Intermediate Position Reset.
+ *   - Fixed unschedule names and added commandId guard.
+ *   - Replaced log toggles with logVerbosity dropdown.
  *
  * v2.5.4 - 2026-09-11 - David Ball-Quenneville
- *   - HOTFIX: Battery voltage-to-percentage formula adjusted to 9.5V-12.6V range.
- *
- * v2.5.3 - 2026-09-02 - David Ball-Quenneville
- *   - Fixed MissingMethodException: logWarn -> logWarning.
- *   - Improved jitter ID: uses the shade's own motorAddress.
- *   - Clear pendingTarget on confirmation.
- *
- * v2.5.2 - 2026-09-02 - David Ball-Quenneville
- *   - Added confirmation-based retry logic.
- *   - Added RF Jitter workaround.
- *   - Grouped retry preferences.
- *   - Removed Keep Debug Logging On.
- *
- * v2.5.1 - 2026-09-02 - David Ball-Quenneville
- *   - Added command retry feature.
- *
- * v2.4.4 - 2026-07-25 - David Ball-Quenneville
- *   - Stable baseline - no retry logic.
+ *   - Battery formula recalibrated to 9.5V–12.6V.
  */
 
 metadata {
@@ -64,7 +54,7 @@ metadata {
         name: "Rollease Acmeda Shade",
         namespace: "DGBQ",
         author: "David Ball-Quenneville (based on Younes Oughla previous work)",
-        version: "2.5.5",
+        version: "2.5.9",
         vid: "generic-shade",
         importUrl: ""
     ) {
@@ -86,6 +76,8 @@ metadata {
         attribute "batteryVoltage", "decimal"
         attribute "rssi", "string"
         attribute "switch", "enum", ["on", "off"]
+        attribute "lastEvent", "string"
+        attribute "lastUpdate", "string"
     }
 
     preferences {
@@ -95,22 +87,22 @@ metadata {
 
         input name: "positionTolerance", type: "number",
             title: "Position Tolerance (%)",
-            description: "Allow the shade to be considered 'confirmed' if it reaches within this percentage of the target. Increase if your shade consistently stops a few percent short. Default: 1. Set to 0 for exact match.",
-            defaultValue: 1,
-            required: false,
-            range: "0..5"
-
-        input name: "cmdRetryCount", type: "number",
-            title: "Command Retry Count",
-            description: "Number of retries if a command fails to receive confirmation. Set to 0 to disable retries. Default: 2.",
+            description: "Allow the shade to be considered 'confirmed' if it reaches within this percentage of the target. Increase if your shade consistently stops a few percent short. Default: 2. Set to 0 for exact match.",
             defaultValue: 2,
             required: false,
             range: "0..5"
 
+        input name: "cmdRetryCount", type: "enum",
+            title: "Command Retry Count",
+            description: "Number of retries if a command fails to receive confirmation. 0 = Off (jitter only). Max 3 retries. (Default: 2)",
+            options: ["0", "1", "2", "3"],
+            defaultValue: "2",
+            required: false
+
         input name: "cmdRetryWait", type: "number",
             title: "Command Retry Wait Time (seconds)",
-            description: "Time to wait before retrying a command. A longer wait gives the shade time to respond. Default: 10 seconds.",
-            defaultValue: 10,
+            description: "Time to wait before retrying a command. The wait time increases by 50% for each subsequent retry. Default: 20 seconds.",
+            defaultValue: 20,
             required: false,
             range: "5..30"
 
@@ -160,6 +152,7 @@ def initialize() {
         sendEvent(name: "switch", value: "off")
         sendEvent(name: "windowShade", value: "closed")
         sendEvent(name: "moving", value: false)
+        sendEvent(name: "lastEvent", value: "idle")
         logDebug "Initialized default attributes"
     }
 
@@ -179,6 +172,7 @@ def initialize() {
     state.commandId = (state.commandId ?: 0) + 1
     state.reportResetCount = 0
     state.lastReportedPosition = null
+    state.lastHeartbeatPosition = null
 }
 
 def on() { open() }
@@ -248,6 +242,7 @@ private def sendCommand(String commandString, int target) {
     // Cancel any pending timers
     unschedule("checkPositionConfirmation")
     unschedule("retryWithJitter")
+    unschedule("checkHeartbeat")
 
     // Increment commandId to invalidate any stale callbacks
     state.commandId = (state.commandId ?: 0) + 1
@@ -261,14 +256,56 @@ private def sendCommand(String commandString, int target) {
     state.jitterUsed = false
     state.reportResetCount = 0
     state.lastReportedPosition = null
+    state.lastHeartbeatPosition = device.currentValue("position") ?: 0
 
     // Send the command
     parent.sendTelnetCommand(commandString)
+    sendEvent(name: "lastEvent", value: "command_sent")
     logDebug "Command sent, waiting for confirmation to ${target}% (commandId=${thisCommandId})"
 
+    // Start the 8-second Heartbeat Check
+    runIn(8, "checkHeartbeat")
+
     // Start confirmation timer
-    int waitTime = settings.cmdRetryWait ?: 10
+    int waitTime = settings.cmdRetryWait ? settings.cmdRetryWait.toInteger() : 20
     runIn(waitTime, "checkPositionConfirmation")
+}
+
+def checkHeartbeat() {
+    def target = state.pendingTarget
+    if (target == null || state.confirmed) return
+
+    def currentPos = device.currentValue("position") ?: 0
+    def lastHeartbeatPos = state.lastHeartbeatPosition ?: 0
+
+    // If position has changed since the command was sent, the shade is moving.
+    if (currentPos != lastHeartbeatPos) {
+        logDebug "Heartbeat: Shade is moving (${lastHeartbeatPos}% -> ${currentPos}%). Resetting heartbeat timer."
+        return
+    }
+
+    // If position has NOT changed, the shade is either Deaf or Stuck.
+    if (state.lastReportedPosition != null && state.lastReportedPosition == lastHeartbeatPos) {
+        logWarning "Heartbeat: Shade appears to be physically stuck at ${currentPos}%. Aborting retries to save RF bandwidth."
+        unschedule("checkPositionConfirmation")
+        unschedule("retryWithJitter")
+        sendEvent(name: "lastEvent", value: "failed")
+        state.pendingTarget = null
+        state.retryCount = 0
+        state.jitterUsed = false
+        return
+    }
+
+    // If we get here, the shade is Deaf. Fire jitter early.
+    if (settings.enableJitter && !state.jitterUsed) {
+        logWarning "Heartbeat: No movement detected after 8 seconds. Firing RF jitter to wake shade."
+        state.jitterUsed = true
+        parent.sendTelnetCommand("!${motorAddress}r?")
+        sendEvent(name: "lastEvent", value: "jitter")
+        
+        unschedule("checkPositionConfirmation")
+        runIn(3, "retryWithJitter")
+    }
 }
 
 def checkPositionConfirmation() {
@@ -290,7 +327,7 @@ def checkPositionConfirmation() {
     }
 
     // Not confirmed - retry or use jitter
-    int maxRetries = settings.cmdRetryCount ?: 2
+    int maxRetries = settings.cmdRetryCount ? settings.cmdRetryCount.toInteger() : 2
     int currentRetry = (state.retryCount ?: 0) + 1
 
     // If jitter hasn't been tried yet, and enabled, do it first
@@ -299,7 +336,9 @@ def checkPositionConfirmation() {
         state.jitterUsed = true
         String jitterId = motorAddress
         parent.sendTelnetCommand("!${jitterId}r?")
+        sendEvent(name: "lastEvent", value: "jitter")
         state.retryCount = currentRetry
+        
         runIn(3, "retryWithJitter")
         return
     }
@@ -307,12 +346,18 @@ def checkPositionConfirmation() {
     // If we've already tried jitter or it's disabled, proceed with normal retry
     if (maxRetries > 0 && currentRetry <= maxRetries) {
         state.retryCount = currentRetry
-        logWarning "Position not confirmed - retry ${currentRetry}/${maxRetries}"
+        sendEvent(name: "lastEvent", value: "retry")
+        
+        // EXPONENTIAL BACKOFF: Increase wait by 50% each time
+        int baseWait = settings.cmdRetryWait ? settings.cmdRetryWait.toInteger() : 20
+        int waitTime = (int)(baseWait * Math.pow(1.5, currentRetry - 1))
+        
+        logWarning "Position not confirmed - retry ${currentRetry}/${maxRetries} in ${waitTime} seconds"
         parent.sendTelnetCommand(state.currentCommand)
-        int waitTime = settings.cmdRetryWait ?: 10
         runIn(waitTime, "checkPositionConfirmation")
     } else {
         logWarning "Position not confirmed after ${maxRetries} retries - command may have failed"
+        sendEvent(name: "lastEvent", value: "failed")
         state.pendingTarget = null
         state.retryCount = 0
         state.jitterUsed = false
@@ -330,7 +375,10 @@ def retryWithJitter() {
     }
     logWarning "Retrying after jitter"
     parent.sendTelnetCommand(state.currentCommand)
-    int waitTime = settings.cmdRetryWait ?: 10
+    sendEvent(name: "lastEvent", value: "retry")
+    
+    // First retry after jitter uses the base wait time
+    int waitTime = settings.cmdRetryWait ? settings.cmdRetryWait.toInteger() : 20
     runIn(waitTime, "checkPositionConfirmation")
 }
 
@@ -342,12 +390,15 @@ def stop() {
     // Cancel any pending timers
     unschedule("checkPositionConfirmation")
     unschedule("retryWithJitter")
+    unschedule("checkHeartbeat")
+    sendEvent(name: "lastEvent", value: "stopped")
     state.pendingTarget = null
     state.retryCount = 0
     state.confirmed = false
     state.jitterUsed = false
     state.reportResetCount = 0
     state.lastReportedPosition = null
+    state.lastHeartbeatPosition = null
     parent.sendTelnetCommand("!${motorAddress}s")
 }
 
@@ -379,11 +430,14 @@ def stopPositionChange() {
 def requestBatteryStatus() {
     logInfo "Requesting battery status from hub"
     parent.sendTelnetCommand("!${motorAddress}pVc?")
+    sendEvent(name: "lastEvent", value: "battery_report")
 }
 
 // ========== Parsing Hub Responses ==========
 
 def parse(String msg) {
+    sendEvent(name: "lastUpdate", value: new Date().format("yyyy-MM-dd HH:mm:ss"))
+    
     if (msg.startsWith("!${motorAddress}r")) {
         String posStr = msg.substring(5, 8)
         int position = 100 - Integer.parseInt(posStr)
@@ -391,7 +445,7 @@ def parse(String msg) {
 
         // Confirmation logic
         def target = state.pendingTarget
-        int tolerance = (settings.positionTolerance != null) ? settings.positionTolerance.toInteger() : 1
+        int tolerance = (settings.positionTolerance != null) ? settings.positionTolerance.toInteger() : 2
 
         if (target != null) {
             // Check if we are within tolerance of the target
@@ -400,9 +454,11 @@ def parse(String msg) {
                 state.pendingTarget = null
                 state.reportResetCount = 0
                 state.lastReportedPosition = null
+                sendEvent(name: "lastEvent", value: "position_confirmed")
                 logDebug "Confirmation received for target ${target}% (reported ${position}%, tolerance +/-${tolerance}%)"
                 unschedule("checkPositionConfirmation")
                 unschedule("retryWithJitter")
+                unschedule("checkHeartbeat")
             } else {
                 // Intermediate position report
                 def lastReported = state.lastReportedPosition
@@ -414,7 +470,7 @@ def parse(String msg) {
                         state.reportResetCount = resetCount + 1
                         logDebug "Intermediate position ${position}% received (target ${target}%) - resetting confirmation timer (${state.reportResetCount}/${maxResets})"
                         unschedule("checkPositionConfirmation")
-                        int waitTime = settings.cmdRetryWait ?: 10
+                        int waitTime = settings.cmdRetryWait ? settings.cmdRetryWait.toInteger() : 20
                         runIn(waitTime, "checkPositionConfirmation")
                     } else {
                         logDebug "Intermediate position ${position}% received but reset limit reached (${resetCount}/${maxResets}) - allowing timer to expire"
@@ -458,6 +514,7 @@ def parse(String msg) {
             sendEvent(name: "batteryVoltage", value: voltDecimal, unit: "V")
             sendEvent(name: "battery", value: adjustedPct, unit: "%")
             if (parts.size() > 1) sendEvent(name: "rssi", value: parts[1].trim())
+            sendEvent(name: "lastEvent", value: "battery_report")
 
             logDebug "Parsed Success: ${voltDecimal}V, original ${batteryPct}%, offset ${offset} -> ${adjustedPct}%, RSSI: ${parts.size() > 1 ? parts[1] : 'N/A'}"
         } catch (e) {
@@ -507,7 +564,6 @@ def logsOff() {
 }
 
 // ========== Logging Helpers ==========
-// Order of severity: ERROR (0) < WARN (1) < INFO (2) < DEBUG (3)
 private int getVerbosityLevel() {
     def levels = ["ERROR": 0, "WARN": 1, "INFO": 2, "DEBUG": 3]
     return levels[settings.logVerbosity] ?: 2

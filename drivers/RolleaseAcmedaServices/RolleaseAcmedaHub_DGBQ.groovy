@@ -1,0 +1,430 @@
+/*
+ * Name: Rollease Acmeda Hub
+ * Type: Driver
+ * Purpose: Parent driver for Rollease Acmeda Pulse 2 Hub. Manages telnet communication,
+ *          child device discovery, and provides surgical error handling for "Stream is closed".
+ *          Includes shade management commands (discover, add, remove) and a shade list state.
+ *
+ * Author: David Ball-Quenneville (maintainer, based on Younes Oughla previous work)
+ * Copyright 2026 David Ball-Quenneville
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Revision History:
+ * v3.3.26 - 2026-11-04 - David Ball-Quenneville
+ *   - HOTFIX: Added a connection guard to refreshAllChildren() to prevent the 
+ *     driver from blocking for 160 seconds if the network is down.
+ *
+ * v3.3.25 - 2026-10-28 - David Ball-Quenneville
+ *   - PHASE 2B (Logging UX Overhaul & Initialize Fix):
+ *     - Replaced logEnable, txtEnable, keepDebugOn with unified logVerbosity dropdown.
+ *     - Removed capability "Refresh" (hides the no-op button).
+ *     - Added diagnostic timestamps to initialize().
+ *     - Moved child refresh loop to refreshAllChildren() scheduled via runIn(3).
+ *
+ * v3.3.24 - 2026-09-11 - David Ball-Quenneville
+ *   - PHASE 1 (Critical Bug Fixes):
+ *     - ShadeAdd(): Added child.initialize() after setting motorAddress.
+ *     - parse(): Added child.initialize() on new child creation; added address
+ *       validation for existing children (updates motorAddress if mismatched).
+ *     - ShadeRemove(): Added safety check – verifies child's motorAddress matches
+ *       the requested motorId before deletion. Aborts if mismatched or null.
+ *
+ * v3.3.23 - 2026-07-25 - David Ball-Quenneville
+ *   - Added connectionState attribute (connected, connecting, idle, error).
+ *   - Added lastConnectionChange attribute (timestamp of last state change).
+ *   - Added status mirroring – status always matches connectionState.
+ *   - Added Auto Child Refresh – all child shades are refreshed after Initialize.
+ */
+
+metadata {
+    definition (
+        name: "Rollease Acmeda Hub",
+        namespace: "DGBQ",
+        author: "David Ball-Quenneville (based on Younes Oughla previous work)",
+        version: "3.3.26",
+        vid: "generic-shade",
+        importUrl: ""
+    ) {
+        capability "Initialize"
+        capability "Configuration"
+        capability "Telnet"
+        // Removed capability "Refresh" to hide the no-op button.
+
+        command "ShadeDiscover"
+        command "ShadeAdd", ["string"]
+        command "ShadeRemove", ["string"]
+        command "ShadeDeleteAll"
+        command "sendTelnetCommand", ["string"]
+
+        attribute "status", "enum", ["online", "idle", "offline"]
+        attribute "connectionState", "enum", ["connected", "connecting", "idle", "error"]
+        attribute "lastConnectionChange", "string"
+        attribute "lastCommand", "string"
+        attribute "lastAction", "string"
+        attribute "lastUpdate", "string"
+        attribute "shades", "string"
+    }
+
+    preferences {
+        input name: "hubAddress", type: "text", title: "Hub Address", description: "IP Address of the Hub", defaultValue: "", required: true, displayDuringSetup: true
+        input name: "hubPort", type: "text", title: "Hub Port", description: "Telnet port of the Pulse 2 Hub", defaultValue: "1487", required: true, displayDuringSetup: true
+        input name: "connectionRetryInterval", type: "number", title: "Connection Retry Interval", description: "Number of seconds to wait before re-attempting the connection. 0=Do Not Retry", defaultValue: 300, required: false, displayDuringSetup: false
+        input name: "maxIdleTime", type: "number", title: "Maximum Idle Time", description: "Reset connection to hub if no status reports are received within this time (Seconds). 0=Disabled", defaultValue: 3600, required: false, displayDuringSetup: false
+        input name: "enableSilencer", type: "bool", title: "Enable Error Silencer", description: "Intercept 'Stream is closed' and log as INFO instead of ERROR", defaultValue: true, required: false, displayDuringSetup: false
+        
+        input name: "logVerbosity", type: "enum",
+            title: "Log Verbosity",
+            description: "Controls the amount of detail written to the log and debug buffer. (Default: INFO)",
+            options: ["ERROR", "WARN", "INFO", "DEBUG"],
+            defaultValue: "INFO",
+            required: false,
+            displayDuringSetup: false
+            
+        input name: "autoRevertDebug", type: "bool", title: "Auto-Revert Debug", description: "Automatically reverts Log Verbosity from DEBUG to INFO after 30 minutes.", defaultValue: true, required: false, displayDuringSetup: false
+    }
+}
+
+def installed() {
+    initialize()
+}
+
+def updated() {
+    // Cancel auto-off if debug is off or Auto-Revert is disabled
+    if (settings.logVerbosity != "DEBUG" || !settings.autoRevertDebug) {
+        unschedule("logsOff")
+    }
+    initialize()
+}
+
+def initialize() {
+    unschedule("checkIdle")
+    unschedule()
+    unschedule("refreshAllChildren")
+
+    // Update connection state and timestamp
+    updateConnectionState("connecting")
+
+    telnetClose()
+
+    def port = (settings.hubPort ?: "1487").toString()
+    if (!port.isInteger() || port.toInteger() <= 0) {
+        logError "Invalid hubPort: ${port}. Using default 1487."
+        port = "1487"
+    }
+
+    logInfo "Opening telnet connection to ${settings.hubAddress}:${port}"
+
+    // Diagnostic timestamp
+    logDebug "DEBUG: Starting telnetConnect() at ${new Date().format('HH:mm:ss.SSS')}"
+    
+    try {
+        telnetConnect([termChars:[59]], settings.hubAddress, port.toInteger(), null, null)
+        updateConnectionState("connected")
+    } catch (e) {
+        updateConnectionState("error")
+        logError "Connection failed: ${e.message}"
+    }
+    
+    // Diagnostic timestamp
+    logDebug "DEBUG: Finished telnetConnect() at ${new Date().format('HH:mm:ss.SSS')}"
+
+    startMaxIdleTimer()
+
+    // Debug logging – respect Auto-Revert preference
+    if (settings.logVerbosity == "DEBUG" && settings.autoRevertDebug) {
+        runIn(1800, "logsOff")
+        logDebug "Log Verbosity will auto-revert to INFO after 30 minutes (Auto-Revert enabled)"
+    } else if (settings.logVerbosity == "DEBUG") {
+        logDebug "Log Verbosity will remain at DEBUG (Auto-Revert disabled)"
+    }
+
+    rebuildShadeList()
+    updateShadesAttribute()
+
+    // Initialize Fix: Schedule child refresh separately so the driver 
+    // doesn't block the UI thread if telnetConnect() fails.
+    runIn(3, "refreshAllChildren")
+}
+
+def refreshAllChildren() {
+    logDebug "Refreshing all child shades..."
+    
+    // HOTFIX (v3.3.26): Guard against dead connections. 
+    // If the hub is offline, exit immediately to prevent a 160-second block.
+    def connState = device.currentValue("connectionState")
+    if (connState != "connected" && connState != "idle") {
+        logDebug "Skipping child refresh: Hub is not connected (State: ${connState})"
+        return
+    }
+
+    getChildDevices().each { child ->
+        try {
+            child.refresh()
+            logDebug "Refreshed child: ${child.displayName}"
+        } catch (e) {
+            logDebug "Could not refresh child: ${child.displayName}"
+        }
+    }
+}
+
+def updateConnectionState(state) {
+    sendEvent(name: "connectionState", value: state)
+    def now = new Date().format("yyyy-MM-dd HH:mm:ss")
+    sendEvent(name: "lastConnectionChange", value: now)
+
+    // Mirror status to connectionState
+    def statusMap = [
+        "connected": "online",
+        "connecting": "connecting",
+        "idle": "idle",
+        "error": "offline"
+    ]
+    def newStatus = statusMap[state] ?: "offline"
+    sendEvent(name: "status", value: newStatus)
+
+    logDebug "Connection state changed to ${state} at ${now} (status -> ${newStatus})"
+}
+
+def rebuildShadeList() {
+    def ids = []
+    getChildDevices().each { child ->
+        def motorId = child.settings?.motorAddress
+        if (motorId == null) {
+            def parts = child.deviceNetworkId.split("-")
+            if (parts.size() > 1) motorId = parts[-1]
+        }
+        if (motorId) {
+            ids << motorId
+            logDebug "Found child: ${child.displayName}, motor ID: ${motorId}"
+        } else {
+            logDebug "Could not determine motor ID for child: ${child.displayName}, networkId: ${child.deviceNetworkId}"
+        }
+    }
+    state.shadeList = ids
+    logDebug "Shade list rebuilt: ${state.shadeList}"
+}
+
+def updateShadesAttribute() {
+    def list = state.shadeList ?: []
+    sendEvent(name: "shades", value: list.join(", "))
+}
+
+def sendTelnetCommand(String commandString) {
+    logDebug "Sending Telnet Command: ${commandString}"
+    sendEvent(name: "lastCommand", value: commandString)
+    return new hubitat.device.HubAction(commandString, hubitat.device.Protocol.TELNET)
+}
+
+def telnetStatus(String status) {
+    if (settings.enableSilencer && (status.contains("Stream is closed") || status.contains("receive error"))) {
+        logInfo "Hub finished transmission and disconnected (Normal Behavior)."
+        updateConnectionState("idle")
+        return
+    }
+
+    logError "telnetStatus: error: " + status
+    updateConnectionState("error")
+
+    if (settings.connectionRetryInterval > 1) {
+        logInfo "Will try to reconnect in ${settings.connectionRetryInterval} seconds"
+        runIn(settings.connectionRetryInterval, initialize)
+    }
+}
+
+private parse(String msg) {
+    logDebug "Event Received: ${msg}"
+    sendEvent(name: "lastUpdate", value: new Date().format("yyyy-MM-dd HH:mm:ss"))
+
+    motorAddress = msg[1..3]
+    lastThree = msg[-3..-1]
+
+    if (motorAddress == "EUC" || motorAddress == "BR1" || lastThree == "Enp") return
+
+    String thisId = device.deviceNetworkId
+    def cd = getChildDevice("${thisId}-${motorAddress}")
+
+    if (!cd) {
+        logInfo "Found New Shade: " + motorAddress
+        cd = addChildDevice("DGBQ", "Rollease Acmeda Shade", "${thisId}-${motorAddress}", [name: "Rollease Acmeda Shade - ${motorAddress}", isComponent: false])
+        cd.updateSetting("motorAddress", [type:"STRING", value:motorAddress])
+        cd.initialize()
+        if (!state.shadeList) state.shadeList = []
+        if (!state.shadeList.contains(motorAddress)) {
+            state.shadeList << motorAddress
+            updateShadesAttribute()
+            logDebug "Added ${motorAddress} to shadeList"
+        }
+    } else {
+        // Ensure existing child has the correct motorAddress
+        def currentAddress = cd.settings?.motorAddress
+        if (currentAddress != motorAddress) {
+            logDebug "Updating child ${cd.displayName} motorAddress from ${currentAddress} to ${motorAddress}"
+            cd.updateSetting("motorAddress", [type:"STRING", value:motorAddress])
+        }
+    }
+
+    cd.parse(msg)
+    startMaxIdleTimer()
+    updateLastAction(cd, msg)
+}
+
+private def updateLastAction(child, String msg) {
+    String name = child.displayName
+    String action = "Reported"
+    if (msg.contains("m")) {
+        def posMatch = (msg =~ /m(\d{3})/)
+        if (posMatch) {
+            int pos = 100 - Integer.parseInt(posMatch[0][1])
+            action = "Moving to ${pos}%"
+        } else action = "Moving"
+    } else if (msg.contains("r")) {
+        def posMatch = (msg =~ /r(\d{3})/)
+        if (posMatch) {
+            int pos = 100 - Integer.parseInt(posMatch[0][1])
+            action = "Position verified at ${pos}%"
+        } else action = "Position Verified"
+    } else if (msg.contains("s")) {
+        action = "Stopped"
+    }
+    sendEvent(name: "lastAction", value: "${name}: ${action}")
+}
+
+private def startMaxIdleTimer() {
+    if (settings.maxIdleTime > 0) {
+        logDebug "Will reset connection if no events received in ${settings.maxIdleTime} seconds"
+        runIn(settings.maxIdleTime, "resetConnection")
+    }
+}
+
+def configure() {
+    logInfo "Scanning for shades..."
+    sendTelnetCommand "!000v?"
+}
+
+private def resetConnection() {
+    logInfo "Resetting Connection..."
+    initialize()
+}
+
+def logsOff() {
+    if (settings.logVerbosity == "DEBUG") {
+        log.warn "Log Verbosity auto-reverted to INFO (Auto-Revert was enabled)"
+        device.updateSetting("logVerbosity", [value: "INFO", type: "enum"])
+    }
+}
+
+def ShadeDeleteAll() {
+    logWarning "Deleting all child devices..."
+    getChildDevices().each { child ->
+        String motorId = child.settings?.motorAddress
+        if (motorId == null) {
+            def parts = child.deviceNetworkId.split("-")
+            motorId = parts.size() > 1 ? parts[-1] : "unknown"
+        }
+        try {
+            deleteChildDevice(child.deviceNetworkId)
+            logInfo "Deleted child device: ${child.displayName} (ID: ${motorId})"
+        } catch (e) {
+            logError "Failed to delete child device ${child.displayName}: ${e.message}"
+        }
+    }
+    state.shadeList = []
+    updateShadesAttribute()
+    logInfo "All child devices deleted."
+}
+
+def ShadeDiscover() {
+    logInfo "Discovering shades..."
+    sendTelnetCommand("!000v?")
+    runIn(5, "reportDiscoveryResults")
+}
+
+def reportDiscoveryResults() {
+    def currentList = state.shadeList ?: []
+    if (currentList.isEmpty()) logInfo "No shades found or hub did not respond."
+    else logInfo "Shades present: ${currentList.join(', ')}"
+}
+
+def ShadeAdd(String motorId) {
+    if (!(motorId ==~ /[A-Z0-9]{3}/)) {
+        logError "Invalid motor ID: ${motorId}. Must be 3 uppercase letters or digits."
+        return
+    }
+    if (getChildDevice("${device.deviceNetworkId}-${motorId}")) {
+        logWarning "Shade ${motorId} already exists."
+        return
+    }
+    logInfo "Manually adding shade: ${motorId}"
+    try {
+        def child = addChildDevice("DGBQ", "Rollease Acmeda Shade", "${device.deviceNetworkId}-${motorId}", [
+            name: "Rollease Acmeda Shade - ${motorId}",
+            isComponent: false
+        ])
+        child.updateSetting("motorAddress", [type:"STRING", value:motorId])
+        child.initialize()
+        if (!state.shadeList) state.shadeList = []
+        state.shadeList << motorId
+        updateShadesAttribute()
+        logInfo "Shade ${motorId} created."
+    } catch (e) {
+        logError "Failed to create shade ${motorId}: ${e.message}"
+    }
+}
+
+def ShadeRemove(String motorId) {
+    if (!(motorId ==~ /[A-Z0-9]{3}/)) {
+        logError "Invalid motor ID: ${motorId}. Must be 3 uppercase letters or digits."
+        return
+    }
+    def child = getChildDevice("${device.deviceNetworkId}-${motorId}")
+    if (!child) {
+        logWarning "Shade ${motorId} does not exist."
+        return
+    }
+    // Safety check – verify the child's motorAddress matches the requested motorId
+    def childAddress = child.settings?.motorAddress
+    if (childAddress != motorId) {
+        logWarning "SAFETY CHECK FAILED: Child device '${child.displayName}' has motorAddress '${childAddress ?: 'unset'}', but you requested to remove '${motorId}'. Deletion aborted to prevent removing the wrong device."
+        return
+    }
+    logInfo "Manually removing shade: ${motorId} (Device: ${child.displayName})"
+    try {
+        deleteChildDevice(child.deviceNetworkId)
+        if (state.shadeList) state.shadeList.remove(motorId)
+        updateShadesAttribute()
+        logInfo "Shade ${motorId} removed."
+    } catch (e) {
+        logError "Failed to remove shade ${motorId}: ${e.message}"
+    }
+}
+
+// ========== Logging Helpers ==========
+// Order of severity: ERROR (0) < WARN (1) < INFO (2) < DEBUG (3)
+private int getVerbosityLevel() {
+    def levels = ["ERROR": 0, "WARN": 1, "INFO": 2, "DEBUG": 3]
+    return levels[settings.logVerbosity] ?: 2
+}
+
+private def logDebug(message) {
+    if (getVerbosityLevel() >= 3) log.debug "Pulse 2 [DEBUG]: ${message}"
+}
+private def logInfo(message) {
+    if (getVerbosityLevel() >= 2) log.info "Pulse 2 [INFO]: ${message}"
+}
+private def logWarning(message) {
+    if (getVerbosityLevel() >= 1) log.warn "Pulse 2 [WARN]: ${message}"
+}
+private def logError(message) {
+    log.error "Pulse 2 [ERROR]: ${message}"
+}

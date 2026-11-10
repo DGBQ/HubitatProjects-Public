@@ -4,12 +4,12 @@
 
 ## 🔢 Version Control
 
-**Document Control:** 1.2.0\
+**Document Control:** 1.5.0\
 **Current Releases:** Beta
 
-* **Hub Driver:** `RolleaseAcmedaHub-DGBQ.groovy` (v3.3.24)
+* **Hub Driver:** `RolleaseAcmedaHub-DGBQ.groovy` (v3.3.26)
 
-* **Shade Driver:** `RolleaseAcmedaShade_DGBQ.groovy` (v2.5.5)\
+* **Shade Driver:** `RolleaseAcmedaShade_DGBQ.groovy` (v2.5.9)\
   **Maintenance Lead:** David Ball-Quenneville (DGBQ)\
   **Original Developer:** Younes Oughla (Yoonoo)
 
@@ -49,13 +49,19 @@ This version is optimized for the **Automate Pulse 2 Hub** and aims to provide a
 
 * **Confirmation‑based command retry** – commands are retried only if the Hub fails to confirm the target position.
 
-* **Position Tolerance** – shades within a user‑configurable tolerance of the target (default ±1%) are considered confirmed, eliminating false retries on shades that physically stop 1–2% short.
+* **Position Tolerance** – shades within a user‑configurable tolerance of the target (default ±2%) are considered confirmed, eliminating false retries on shades that physically stop 1–2% short.
 
 * **Intermediate Position Reset** – slow shades that report movement progress get more time to complete before jitter fires (up to 2 resets per command).
 
+* **Exponential Backoff & Repeater Protection** – wait times between retries increase by 50% each time, and retries are capped to prevent flooding the RF repeater.
+
+* **Smart Stateful Retry** – the driver checks for movement after 8 seconds to differentiate between a shade that is deaf (missed the RF packet) and a shade that is physically stuck.
+
+* **Actionable Event Tracking** – per-shade `lastEvent` and `lastUpdate` attributes allow you to write precise automations based on a shade's status.
+
 * **RF Jitter workaround** – wakes the Hub's RF transmitter if all retries fail.
 
-* **Log Verbosity dropdown** – single dropdown (ERROR, WARN, INFO, DEBUG) replaces the confusing boolean toggles.
+* **Log Verbosity dropdown** – single dropdown (ERROR, WARN, INFO, DEBUG) replaces the confusing boolean toggles on both drivers.
 
 * **Recalibrated battery reporting** – tuned to match the Rollease app within ±5%.
 
@@ -126,8 +132,7 @@ Commands are manual actions triggered within the Hubitat interface to execute sp
 | Command                 | Description                                                                                                                                       | Default / Example                                                        | Caution                                                                                                                                                                                                    |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`Configure`**         | Re-initializes internal driver settings and commits preferences to the Hubitat database.                                                          | Run after changing any Preference.                                       | None.                                                                                                                                                                                                      |
-| **`Initialize`**        | **The Reset Switch.** Forcibly terminates the current Telnet socket, attempts a clean reconnection, and automatically refreshes all child shades. | Use if `status` is `Disconnected` or after a hub power cycle.            | Wait 15s between clicks to avoid network buffer hangs.                                                                                                                                                     |
-| **`Refresh`**           | Currently a no‑op on the Parent driver. Included for Hubitat capability compliance.                                                               | —                                                                        | None.                                                                                                                                                                                                      |
+| **`Initialize`**        | **The Reset Switch.** Forcibly terminates the current Telnet socket, attempts a clean reconnection, and automatically refreshes all child shades. | Use if `status` is `Disconnected` or after a hub power cycle.            | None.                                                                                                                                                                                                      |
 | **`sendTelnetCommand`** | Sends raw ARC protocol strings directly to the Hub.                                                                                               | `!001m050` (Move Shade 001 to 50%).                                      | **Advanced only.** For advanced troubleshooting only. Standard users should never need this command. Use the Child device's controls for normal operation. Malformed strings can crash the Hub's listener. |
 | **`Shade Add`**         | Manually recreates a Child Shade device when the Parent Hub knows about a shade but Hubitat does not.                                             | Example: Enter the exact ID from the Rollease app (e.g., I39, BSG, XDG). | Caution: The ID must match the Rollease app exactly. It is assigned by the Pulse 2 Hub at pairing time – you cannot choose it.                                                                             |
 | **`Shade Discover`**    | **The Auto‑Scanner.** Queries the Hub for all motors and spawns any missing Child devices.                                                        | The primary setup tool for new installs.                                 | Process may take up to 30 seconds or more.                                                                                                                                                                 |
@@ -146,19 +151,15 @@ Commands are manual actions triggered within the Hubitat interface to execute sp
 
 Preferences define the communication parameters and logging behavior of the driver.
 
-| Preference                     | Detail                                                                                                           | Requirement   | Default                |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------- | ------------- | ---------------------- |
-| **Hub Address\***              | The static local IP of your Pulse 2 Hub.                                                                         | **Mandatory** | None                   |
-| **Hub Port\***                 | The ARC Protocol port for the Pulse 2.                                                                           | **Mandatory** | **1487**               |
-| **Connection Retry Interval**  | Seconds the driver waits before attempting to reconnect after a drop.                                            | Optional      | **300**                |
-| **Maximum Idle Time**          | The window of silence allowed before the driver resets the socket.                                               | Optional      | **3600**               |
-| **Enable Error Silencer**      | Suppresses the benign `Stream is closed` warnings native to the Hub.                                             | Optional      | **Enabled**            |
-| **Enable Debug Logging**       | Outputs high-detail technical data to the system logs.                                                           | Optional      | **Off** (Auto-off 30m) |
-| **Keep Debug Logging On**      | When enabled, debug logging will NOT auto-disable after 30 minutes.                                              | Optional      | **Off**                |
-| **Auto-Revert Debug**          | When enabled, debug logging turns off after 30 minutes. When disabled, debug stays on until manually turned off. | Optional      | **On**                 |
-| **Enable Description Logging** | Logs human-readable events (e.g., "Shade 1 is Opening").                                                         | Optional      | **On**                 |
-
-> **Note:** Phase 2B (Logging UX) will replace `Enable Debug Logging`, `Keep Debug Logging On`, and `Enable Description Logging` with a single **Log Verbosity** dropdown. Phase 3 (Health Check) will replace `Connection Retry Interval` and `Maximum Idle Time` with Health Check preferences. These changes are planned but not yet released.
+| Preference                    | Detail                                                                                                | Requirement   | Default     |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------- | ------------- | ----------- |
+| **Hub Address\***             | The static local IP of your Pulse 2 Hub.                                                              | **Mandatory** | None        |
+| **Hub Port\***                | The ARC Protocol port for the Pulse 2.                                                                | **Mandatory** | **1487**    |
+| **Connection Retry Interval** | Seconds the driver waits before attempting to reconnect after a drop.                                 | Optional      | **300**     |
+| **Maximum Idle Time**         | The window of silence allowed before the driver resets the socket.                                    | Optional      | **3600**    |
+| **Enable Error Silencer**     | Suppresses the benign `Stream is closed` warnings native to the Hub.                                  | Optional      | **Enabled** |
+| **Log Verbosity**             | Controls the amount of detail written to the log and debug buffer. Options: ERROR, WARN, INFO, DEBUG. | Optional      | **INFO**    |
+| **Auto-Revert Debug**         | Automatically reverts Log Verbosity from DEBUG to INFO after 30 minutes.                              | Optional      | **On**      |
 
 ***
 
@@ -204,6 +205,8 @@ Internal memory points used for driver logic.
 
 6. **`Shade Remove` says "SAFETY CHECK FAILED":** The child's `Motor Address` does not match the requested ID. This is intentional — it prevents deleting the wrong device. To change a shade's address, update the `Motor Address` preference directly on the child device instead.
 
+7. **Warning about `refreshAllChildren` running for 160 seconds:** This occurred in v3.3.25 during a Hubitat reboot when the network was not ready. v3.3.26 fixes this by checking the `connectionState` before attempting the refresh. It will be skipped if the connection is dead.
+
 ***
 
 \<h2 id="shade-reference">🪟 Shade (Child): Command & Configuration Reference\</h2>
@@ -233,7 +236,7 @@ Commands are manual actions triggered within the Hubitat interface to control th
 
 > **Note:** The `On`/`Off` buttons are no longer visible in the UI (v2.4.2) but remain fully functional for Alexa and cloud integrations. Alexa uses the native `Window Shade` and `Switch Level` capabilities directly.
 
-> **Retry Behaviour (v2.5.5):** When you issue a command, the driver immediately updates the UI (proactive state) and then waits for the Hub to confirm the shade's new position. Confirmation accepts a shade within `Position Tolerance` of the target (default ±1%). If the shade reports intermediate positions while moving, the confirmation timer is reset (up to 2 times) to give slow shades time to finish. If no confirmation arrives within `Command Retry Wait Time`, the driver retries (up to `Command Retry Count`). If all retries fail and **RF Jitter** is enabled, the driver sends a harmless status request to wake the Hub's RF transmitter and retries once more.
+> **Retry Behaviour (v2.5.9):** When you issue a command, the driver immediately updates the UI (proactive state) and then starts an 8-second "Heartbeat" timer. At 8 seconds, the driver checks if the shade is moving. If the shade is silent (deaf), it fires the RF Jitter to wake it up. If the shade reports it is moving, the driver waits patiently. If the shade reports it is stuck (position hasn't changed), the driver aborts to save RF bandwidth.
 
 ***
 
@@ -245,14 +248,12 @@ Preferences define the identification, retry, and logging behavior for the indiv
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | -------- |
 | **Motor Address\***         | The unique 3-digit ARC identifier (e.g., `001`) for this specific shade.                                                                                                                  | **Mandatory** | None     |
 | **Battery Offset**          | Adjusts reported battery percentage by a fixed amount (−30 to +30). See Battery Reporting & Calibration for guidance.                                                                     | Optional      | **0**    |
-| **Position Tolerance**      | Allow the shade to be considered "confirmed" if it reaches within this percentage of the target. Increase if your shade consistently stops a few percent short. Set to 0 for exact match. | Optional      | **1**    |
-| **Command Retry Count**     | Number of retries if a command fails to receive confirmation. Set to `0` to disable retries.                                                                                              | Optional      | **2**    |
-| **Command Retry Wait Time** | Seconds to wait before retrying a command. A longer wait gives the shade time to respond.                                                                                                 | Optional      | **10**   |
+| **Position Tolerance**      | Allow the shade to be considered "confirmed" if it reaches within this percentage of the target. Increase if your shade consistently stops a few percent short. Set to 0 for exact match. | Optional      | **2**    |
+| **Command Retry Count**     | Number of retries if a command fails to receive confirmation. Options: 0, 1, 2, 3. Set to 0 to disable retries.                                                                           | Optional      | **2**    |
+| **Command Retry Wait Time** | Seconds to wait before retrying a command. The wait time increases by 50% for each subsequent retry. Default: 20 seconds.                                                                 | Optional      | **20**   |
 | **Enable RF Jitter**        | If a command fails, send a harmless status request to wake the Hub's RF transmitter, then retry once more.                                                                                | Optional      | **On**   |
 | **Log Verbosity**           | Controls the amount of detail written to the log and debug buffer. Options: ERROR, WARN, INFO, DEBUG.                                                                                     | Optional      | **INFO** |
 | **Auto-Revert Debug**       | Automatically reverts Log Verbosity from DEBUG to INFO after 30 minutes.                                                                                                                  | Optional      | **On**   |
-
-> **Note:** Phase 2B (Logging UX) will apply the same Log Verbosity dropdown to the Parent Hub driver. This change is planned but not yet released.
 
 ***
 
@@ -265,6 +266,10 @@ Current States provide the live telemetry and operational attributes used for Da
 * **`batteryVoltage`**: The decimal voltage reading (e.g., `12.04V`), used for precise power monitoring. The driver uses a **9.5V to 12.6V** discharge curve.
 
 * **`closed`**: Binary state indicating if shade has reached its lower limit.
+
+* **`lastEvent`**: The most recent event for this shade. Useful for automation triggers. Values: `idle`, `command_sent`, `position_confirmed`, `retry`, `jitter`, `failed`, `stopped`, `battery_report`.
+
+* **`lastUpdate`**: Timestamp of the last successful data burst from the shade.
 
 * **`level`**: Numeric position (0–100) for "SwitchLevel" compatibility.
 
@@ -306,6 +311,8 @@ Internal memory points used by the driver logic.
 
 * **`lastReportedPosition`**: The last position reported by the Hub. Used to detect whether the position has actually changed.
 
+* **`lastHeartbeatPosition`**: Tracks the position at the 8-second heartbeat check to determine if the shade is moving or stuck.
+
 ***
 
 ### **Troubleshooting (Child Level)**
@@ -325,6 +332,45 @@ Internal memory points used by the driver logic.
 7. **Logs are too noisy or too quiet:** Adjust **Log Verbosity**. Set to `ERROR` for minimal output, `INFO` for standard, `DEBUG` for detailed troubleshooting. `Auto-Revert Debug` will revert `DEBUG` back to `INFO` after 30 minutes.
 
 8. **Battery percentage doesn't match the Rollease app:** See Battery Reporting & Calibration below. Small differences (±5%) are normal. You can fine-tune with the **Battery Offset** preference.
+
+9. **A single shade stops responding (but hub and other shades are fine):**
+
+   * **Symptoms:** One specific shade stops responding to Hubitat commands. The official Rollease physical remote control **still works** for that shade. Rebooting the Pulse Hub or initializing the driver does not fix it.
+
+   * **Cause:** The RF repeater closest to that shade has likely gone into a stale state. It is powered on, but it has stopped forwarding RF traffic.
+
+   * **Fix:** Unplug the RF repeater for 10 seconds and plug it back in. The shade should reconnect immediately.
+
+10. **How to Read Your Logs (Understanding Warnings):**\
+    If you look at your Hubitat logs, you may occasionally see `WARN` messages from your shades. **Do not panic.** These warnings are an intentional part of the driver's safety net. They indicate that the driver is actively correcting an RF issue, not that the shade is broken.
+
+    * **`WARN: Heartbeat: No movement detected after 8 seconds. Firing RF jitter to wake shade.`**
+
+      * **What it means:** Your shade missed the initial command.
+
+      * **Why this might happen:** This is very common at 10:00 PM if all shades in the house are closing at the same time (RF traffic jam). It can also happen if a shade is at the edge of the mesh, or if its internal RF receiver is weak and goes into a deep sleep.
+
+      * **What the driver does:** The driver sends a harmless "wake up" signal. The shade responds, and the movement completes.
+
+      * **Action required:** None. This is the driver working as designed.
+
+    * **`WARN: Position not confirmed - retry 1/2 in 20 seconds.`**
+
+      * **What it means:** The shade is taking longer to physically move than expected, or it missed the wake-up signal.
+
+      * **Why this might happen:** Taller or wider shades take longer to travel. Alternatively, if you are using an RF repeater, the repeater may be struggling to route the signal to that specific shade.
+
+      * **Action required:** If this happens on every single command, increase the **Command Retry Wait Time** for that shade. If you use a repeater, power-cycle it.
+
+    * **`WARN: Position not confirmed after 2 retries - command may have failed.`**
+
+      * **What it means:** The shade has gone completely deaf to the Hubitat commands.
+
+      * **Why this might happen:** The battery may be dead. Or, there may be a hardware issue (e.g., a weak transmitter in the motor itself). Or, the RF repeater may have locked up.
+
+      * **Action required:** Check the shade's battery. If the battery is fine, power-cycle the nearest RF repeater. If it persists, test the shade with the official Rollease physical remote. If the remote works but Hubitat does not, the shade's RF receiver may be weak or failing.
+
+    * **Pro Tip:** If you find the `WARN` messages too noisy, you can change the **Log Verbosity** preference on the shade to `ERROR`. This will hide the recovery warnings, but the driver will still do the recovery in the background.
 
 ***
 
@@ -433,79 +479,20 @@ This driver overhaul was a collaborative effort between a human **Project Manage
 
 \<h2 id="revision-history">📜 Revision History\</h2>
 
-| Version   | Date       | Changes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| --------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1.2.0** | 2026-09-16 | Aligned with Shade v2.5.5. Added `Position Tolerance` preference and intermediate position reset to the retry behaviour. Replaced `Enable Debug Logging`, `Keep Debug Logging On`, and `Enable Description Logging` on the Child driver with a single `Log Verbosity` dropdown. Added new state variables (`commandId`, `reportResetCount`, `lastReportedPosition`). Added troubleshooting entries for position tolerance and log verbosity. Added current release highlights for tolerance and intermediate reset. |
-| 1.1.0     | 2026-09-11 | Aligned with Hub v3.3.24 and Shade v2.5.4. Added confirmation‑based retry, RF jitter, and new child preferences. Updated battery reporting section (9.5V–12.6V curve, ±5% accuracy, Battery Offset guidance, shade type differences). Documented Phase 1 bug fixes (child address validation, safe `ShadeRemove`). Added `Shade Remove` safety note. Added upcoming Phase 2 / Phase 3 notes.                                                                                                                        |
-| 1.0.8     | 2026-07-10 | Updated Shade Driver to v2.4.2 (removed explicit on/off commands; cleaner UI).                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| 1.0.7     | 2026-07-10 | Updated Hub Driver to v3.3.15. Added `lastConnectionChange` attribute. Reordered preferences for better UX.                                                                                                                                                                                                                                                                                                                                                                                                         |
-| 1.0.6     | 2026-07-10 | Updated driver versions to v3.3.14 (Hub) and v2.4.0 (Shade). Added `Auto‑Refresh Interval` preference and `connectionState` attribute.                                                                                                                                                                                                                                                                                                                                                                              |
-| 1.0.5     | 2026-04-25 | Added troubleshooting step for Pulse 2 Hub power loss.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| 1.0.4     | 2026-04-07 | Corrected preference defaults; added notes for non‑functional commands.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| 1.0.3     | 2026-04-05 | Added Auto-Revert Debug, removed duplicate commands.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| 1.0.2     | 2026-04-05 | Added Request Battery Status and Auto-Revert Debug.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| 1.0.1     | 2026-04-05 | Added Battery Offset.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| **1.0.0** | 2026-03-20 | Initial production documentation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-
-***
-
-## 📝 Summary of Updates Applied to QuickStartInstallation\&Configuration.md (v1.1.0 → v1.2.0)
-
-### Version Control
-
-* Bumped Shade Driver from **v2.5.4** → **v2.5.5**.
-
-* Bumped Document Control from **1.1.0** → **1.2.0**.
-
-### Introduction & Overview
-
-* Added **Position Tolerance** and **Intermediate Position Reset** to the current release highlights.
-
-* Added **Log Verbosity dropdown** to the current release highlights.
-
-### Parent Hub Section
-
-* No content changes – Parent remains at v3.3.24. The "Phase 2B" note still stands (logging UX will be applied to the Parent next).
-
-* Changed Phase 2 reference to **Phase 2B** for clarity (since Phase 2A is now complete).
-
-### Shade (Child) Section – Commands
-
-* Updated **Retry Behaviour** note to describe the v2.5.5 flow: position tolerance, intermediate reset, and the updated retry sequence.
-
-### Shade (Child) Section – Preferences
-
-* Added **`Position Tolerance`** preference row (default 1, range 0–5).
-
-* Replaced three log preferences (`Enable Description Logging`, `Enable Debug Logging`, `Auto-Revert Debug` rows) with the new **`Log Verbosity`** dropdown row plus the updated **`Auto-Revert Debug`** row.
-
-* Removed references to old boolean toggles in the Shade section.
-
-### Shade (Child) Section – State Variables
-
-* Added **`commandId`**, **`reportResetCount`**, and **`lastReportedPosition`** to the state variable list.
-
-### Shade (Child) Section – Troubleshooting
-
-* Added new entry #6: **Shade stops 1–2% short of target and triggers retries** → adjust Position Tolerance.
-
-* Added new entry #7: **Logs are too noisy or too quiet** → adjust Log Verbosity.
-
-* Renumbered subsequent entries.
-
-### Revision History
-
-* Added **v1.2.0** entry (2026-09-16) documenting the Phase 2A changes reflected in this document.
-
-### What Did NOT Change
-
-* Overview prose, Installation steps, Parent Hub commands and preferences tables.
-
-* Battery Reporting section (unchanged – still aligned with v2.5.4 battery hotfix).
-
-* Support & Enhancements section, Disclaimers section.
-
-* All earlier revision history entries.
-
-***
+| Version   | Date       | Changes                                                                                                                                                                                                                                                                 |
+| --------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1.5.0** | 2026-11-04 | Aligned with Hub v3.3.26 and Shade v2.5.9. Added `lastEvent` and `lastUpdate` attributes to the Child Shade section. Added a detailed "How to Read Your Logs" troubleshooting section. Added a troubleshooting note for the `refreshAllChildren` fix on the Parent Hub. |
+| 1.4.0     | 2026-10-28 | Aligned with Hub v3.3.25 and Shade v2.5.8. Updated Parent Hub preferences to include `Log Verbosity` and removed obsolete logging toggles. Updated Child Shade preferences to reflect the new Smart Stateful Retry behaviour.                                           |
+| 1.3.0     | 2026-10-23 | Aligned with Shade v2.5.7. Updated `Position Tolerance` default to 2, `Command Retry Wait Time` default to 20, and changed `Command Retry Count` to a dropdown. Added Exponential Backoff to the Retry Behaviour description.                                           |
+| 1.2.0     | 2026-09-16 | Aligned with Shade v2.5.5. Added `Position Tolerance` preference and intermediate position reset to the retry behaviour. Replaced boolean logging toggles with `Log Verbosity`.                                                                                         |
+| 1.1.0     | 2026-09-11 | Aligned with Hub v3.3.24 and Shade v2.5.4. Added confirmation‑based retry, RF jitter, and new child preferences.                                                                                                                                                        |
+| 1.0.8     | 2026-07-10 | Updated Shade Driver to v2.4.2 (removed explicit on/off commands; cleaner UI).                                                                                                                                                                                          |
+| 1.0.7     | 2026-07-10 | Updated Hub Driver to v3.3.15. Added `lastConnectionChange` attribute. Reordered preferences for better UX.                                                                                                                                                             |
+| 1.0.6     | 2026-07-10 | Updated driver versions to v3.3.14 (Hub) and v2.4.0 (Shade). Added `Auto‑Refresh Interval` preference and `connectionState` attribute.                                                                                                                                  |
+| 1.0.5     | 2026-04-25 | Added troubleshooting step for Pulse 2 Hub power loss.                                                                                                                                                                                                                  |
+| 1.0.4     | 2026-04-07 | Corrected preference defaults; added notes for non‑functional commands.                                                                                                                                                                                                 |
+| 1.0.3     | 2026-04-05 | Added Auto-Revert Debug, removed duplicate commands.                                                                                                                                                                                                                    |
+| 1.0.2     | 2026-04-05 | Added Request Battery Status and Auto-Revert Debug.                                                                                                                                                                                                                     |
+| 1.0.1     | 2026-04-05 | Added Battery Offset.                                                                                                                                                                                                                                                   |
+| **1.0.0** | 2026-03-20 | Initial production documentation.                                                                                                                                                                                                                                       |
 

@@ -4,7 +4,7 @@
 **Project Branch:** The Surgical Observer\
 **Integration Logic:** Parent/Child Architecture with Surgical Error Silencer\
 **Document Status:** Final Production Specification\
-**Driver Version:** 3.3.24
+**Driver Version:** 3.3.26
 
 ***
 
@@ -48,6 +48,24 @@ Phase 1 addresses three root causes:
 
 * **`ShadeRemove()`:** A safety check now compares the target child's `motorAddress` preference against the requested `motorId`. If they do not match (or the address is unset), deletion is **aborted** with a warning. This prevents accidental removal of the wrong device.
 
+### 1.5 Phase 2B Logging UX & Initialize Optimization (v3.3.25)
+
+In v3.3.25, the Parent Hub was updated to match the Child Shade driver's logging UI and to fix a critical blocking issue during reboots.
+
+* **Logging UX:** The confusing `Enable Debug Logging`, `Keep Debug Logging On`, and `Enable Description Logging` toggles were replaced with a single **Log Verbosity** dropdown (ERROR, WARN, INFO, DEBUG). This unifies the UI across both drivers.
+
+* **UI Cleanup:** The `capability "Refresh"` was removed from the metadata. The Parent Hub no longer displays a no-op Refresh button. (The `Initialize` command already auto-refreshes all child shades).
+
+* **Initialize Optimization:** Production logs showed that when the Hubitat Hub rebooted, the `initialize()` method could block the UI for up to 140 seconds while waiting for the network to time out. The child refresh loop was moved out of `initialize()` and into a separate scheduled method (`runIn(3, "refreshAllChildren")`). This ensures the driver remains responsive even if the network is unreachable.
+
+### 1.6 Phase 2C Refresh Guard (v3.3.26)
+
+In v3.3.26, a residual blocking issue from v3.3.25 was fixed.
+
+While moving the refresh loop to `refreshAllChildren()` prevented `initialize()` from blocking, the `refreshAllChildren()` method itself would still hang for 160 seconds if the network was dead when it fired. This caused a warning in the logs during Hubitat reboots.
+
+The fix was to add a connection state guard at the top of `refreshAllChildren()`. The method now checks the `connectionState` attribute. If the state is not `connected` or `idle`, it exits immediately without attempting to send Telnet commands.
+
 ***
 
 ## 2. Full Command API (Functional Methods)
@@ -58,9 +76,9 @@ These methods represent the actionable interface within the Hubitat UI.
 
 * **`configure()`**: The primary discovery tool. It transmits the `!000v?` global request to the Hub, forcing it to report every known shade on the mesh. This triggers the automatic creation of child devices.
 
-* **`initialize()`**: The "Reset" button. This method clears any stuck Telnet sockets, resets internal state flags, updates the `connectionState` attribute, and prepares a clean handshake for the next burst. It also automatically refreshes all child shades after reconnection.
+* **`initialize()`**: The "Reset" button. This method clears any stuck Telnet sockets, resets internal state flags, updates the `connectionState` attribute, and prepares a clean handshake for the next burst. It schedules the child refresh loop to run 3 seconds later.
 
-* **`refresh()`**: Currently a **no-op** on the Parent driver. It is included for Hubitat Capability compliance but performs no action. To poll children for status, use `initialize()` (which auto-refreshes children) or call `refresh()` directly on each child device.
+* **`refresh()`**: **Removed** as a capability in v3.3.25. The Parent Hub no longer exposes a Refresh button.
 
 * **`sendTelnetCommand(String msg)`**: The internal engine. This method handles the actual delivery of ARC strings and manages the "Burst-and-Close" lifecycle.
 
@@ -72,9 +90,9 @@ The following "Shade-Prefix" commands allow for precision management of the shad
 
 * **`ShadeDiscover`**: A programmatic scan that reconciles the Hub's physical motor list with the Hubitat child device list. It ignores existing devices and only spawns new ones.
 
-* **`ShadeAdd(String motorId)`**: Manual entry for a specific motor. Requires a 3-character ID (e.g., `I39`). Includes "Guardrail" logic to ensure the ID is correctly formatted and not a duplicate. As of v3.3.24, the new child is initialized immediately and its `motorAddress` preference is set.
+* **`ShadeAdd(String motorId)`**: Manual entry for a specific motor. Requires a 3-character ID (e.g., `I39`). Includes "Guardrail" logic to ensure the ID is correctly formatted and not a duplicate. The new child is initialized immediately and its `motorAddress` preference is set.
 
-* **`ShadeRemove(String motorId)`**: Deletes a specific child device from the parent and the Hubitat database. As of v3.3.24, a **safety check** verifies the child's `motorAddress` matches the requested ID before deletion. If mismatched, deletion is aborted.
+* **`ShadeRemove(String motorId)`**: Deletes a specific child device from the parent and the Hubitat database. A **safety check** verifies the child's `motorAddress` matches the requested ID before deletion. If mismatched, deletion is aborted.
 
 * **`ShadeDeleteAll`**: A safety clearing utility that removes all child devices under the `DGBQ` namespace. Note: this bypasses the per-device safety check and deletes all children unconditionally.
 
@@ -84,19 +102,15 @@ The following "Shade-Prefix" commands allow for precision management of the shad
 
 These inputs allow the user to tune the driver to their specific network environment.
 
-| Preference                     | Format  | Default    | Description                                                                                                                    |
-| ------------------------------ | ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **Hub Address**                | String  | (Required) | Static IP of the Pulse 2 Hub on the local network.                                                                             |
-| **Hub Port**                   | String  | 1487       | The standard ARC protocol port for Pulse 2 communication. Stored as text to avoid comma formatting.                            |
-| **Connection Retry Interval**  | Number  | 300s       | Time between reconnection attempts if the Hub is offline. Set to 0 to disable.                                                 |
-| **Maximum Idle Time**          | Number  | 3600s      | The timeout before the driver closes an inactive socket. Set to 0 to disable.                                                  |
-| **Enable Error Silencer**      | Boolean | True       | Enables the logic that hides standard "Burst" disconnects from logs.                                                           |
-| **Enable Debug Logging**       | Boolean | False      | Enables high-verbosity traces for protocol debugging. Auto-off after 30 minutes if `Auto-Revert Debug` is enabled.             |
-| **Keep Debug Logging On**      | Boolean | False      | When enabled, debug logging will NOT auto-disable after 30 minutes.                                                            |
-| **Auto-Revert Debug**          | Boolean | True       | When enabled, debug logging automatically turns off after 30 minutes. When disabled, debug stays on until manually turned off. |
-| **Enable Description Logging** | Boolean | True       | Enables user-friendly logs for shade movements and battery alerts.                                                             |
-
-> **Planned changes (Phase 2 & 3):** Phase 2 will replace the three logging preferences with a single **Log Verbosity** dropdown (`ERROR`, `WARN`, `INFO`, `DEBUG`). Phase 3 will replace `Connection Retry Interval` and `Maximum Idle Time` with a Health Check mechanism (`Health Check Interval`, `Health Check Max Retries`, `Health Check Retry Delay`) that includes auto-recovery.
+| Preference                    | Format  | Default    | Description                                                                                                   |
+| ----------------------------- | ------- | ---------- | ------------------------------------------------------------------------------------------------------------- |
+| **Hub Address**               | String  | (Required) | Static IP of the Pulse 2 Hub on the local network.                                                            |
+| **Hub Port**                  | String  | 1487       | The standard ARC protocol port for Pulse 2 communication. Stored as text to avoid comma formatting.           |
+| **Connection Retry Interval** | Number  | 300s       | Time between reconnection attempts if the Hub is offline. Set to 0 to disable.                                |
+| **Maximum Idle Time**         | Number  | 3600s      | The timeout before the driver closes an inactive socket. Set to 0 to disable.                                 |
+| **Enable Error Silencer**     | Boolean | True       | Enables the logic that hides standard "Burst" disconnects from logs.                                          |
+| **Log Verbosity**             | Enum    | INFO       | Controls the amount of detail written to the log and debug buffer. Options: `ERROR`, `WARN`, `INFO`, `DEBUG`. |
+| **Auto-Revert Debug**         | Boolean | True       | Automatically reverts `Log Verbosity` from `DEBUG` to `INFO` after 30 minutes.                                |
 
 ***
 
@@ -138,7 +152,7 @@ This section defines the background memory and initialization logic used to main
 
 * **Attribute Seeding**: Upon installation or initialization, the driver ensures critical attributes are populated with baseline values to prevent null-errors in Dashboards and Alexa integrations.
 
-* **Auto Child Refresh**: After every `initialize()`, the driver automatically calls `refresh()` on every child shade. This eliminates the need to manually refresh each shade after a power cycle or network glitch.
+* **Auto Child Refresh**: After every `initialize()`, the driver schedules a call to `refreshAllChildren()`. This eliminates the need to manually refresh each shade after a power cycle or network glitch.
 
 * **Connection State Updates**: The `connectionState` attribute is set as follows:
 
@@ -152,9 +166,11 @@ This section defines the background memory and initialization logic used to main
 
 * **`lastConnectionChange`**: Updated every time `connectionState` changes, with a human-readable timestamp.
 
-* **Address Reconciliation (v3.3.24)**: During `parse()`, if an existing child's `motorAddress` preference does not match the incoming address from the hub, the parent silently updates the child's preference. This keeps parent and child state synchronized and prevents mismatches that could lead to incorrect `ShadeRemove` behaviour.
+* **Address Reconciliation**: During `parse()`, if an existing child's `motorAddress` preference does not match the incoming address from the hub, the parent silently updates the child's preference. This keeps parent and child state synchronized.
 
-* **New Child Initialization (v3.3.24)**: Whenever the parent creates a child (via `ShadeAdd` or automatically in `parse()`), it calls `child.initialize()` immediately. This ensures the child seeds its default attributes and logs its motor address before the first message is parsed.
+* **New Child Initialization**: Whenever the parent creates a child (via `ShadeAdd` or automatically in `parse()`), it calls `child.initialize()` immediately. This ensures the child seeds its default attributes and logs its motor address before the first message is parsed.
+
+* **`refreshAllChildren()`**: A separate method introduced in v3.3.25 and patched in v3.3.26. It checks the `connectionState` before attempting to refresh children, and exits immediately if the Telnet socket is dead.
 
 ***
 
@@ -166,9 +182,13 @@ This section defines the background memory and initialization logic used to main
 
 * **Burst Integrity:** All manual commands are automatically zero-padded (e.g., `1` becomes `001`) to comply with the Hub's strict protocol formatting.
 
-* **ShadeRemove Safety Check (v3.3.24):** Before deleting a child device, the driver compares the child's `motorAddress` preference against the requested `motorId`. If they do not match (or the address is unset), deletion is aborted with a warning. This prevents accidental deletion of the wrong device — a bug that previously caused the loss of a working shade.
+* **ShadeRemove Safety Check:** Before deleting a child device, the driver compares the child's `motorAddress` preference against the requested `motorId`. If they do not match (or the address is unset), deletion is aborted with a warning.
 
-* **External Recovery Support:** The `connectionState` attribute provides a reliable trigger for webCoRE pistons to perform event-driven recovery actions (e.g., power-cycling the hub). The `lastConnectionChange` attribute provides a timestamp for auditing failures.
+* **Initialize Blocking Protection (v3.3.25):** The child refresh loop is moved out of the main `initialize()` method. This ensures the driver can always process new commands, even if the network is down.
+
+* **Refresh Guard (v3.3.26):** The `refreshAllChildren()` method will not attempt to send commands if the Telnet connection is in an `error` state. This prevents the driver from hanging for 160 seconds during a Hubitat reboot.
+
+* **External Recovery Support:** The `connectionState` attribute provides a reliable trigger for webCoRE pistons to perform event-driven recovery actions.
 
 > **Critical operational note:** Do **not** use `ShadeRemove` as a means of swapping addresses between devices. To change a shade's ARC ID, update the `motorAddress` preference directly on the child device. To update automations that reference the device, use the Hubitat **Swap Apps Device** tool (noting that this tool does not support child devices, so webCoRE pistons must be updated manually). See the QuickStart guide for details.
 
@@ -180,9 +200,9 @@ This section defines the background memory and initialization logic used to main
 
 * **Lineage:** Optimized fork of the Younes Oughla (arcautomate) original branch.
 
-* **Current Driver Version:** 3.3.24
+* **Current Driver Version:** 3.3.26
 
-* **Key Enhancements (v3.3.23 – v3.3.24):**
+* **Key Enhancements (v3.3.23 – v3.3.26):**
 
   * Added `connectionState` attribute for granular health monitoring.
 
@@ -192,11 +212,35 @@ This section defines the background memory and initialization logic used to main
 
   * **Phase 1 (v3.3.24):** Child address validation in `parse()`, immediate child initialization in `ShadeAdd` and `parse()`, safety check in `ShadeRemove()`.
 
-* **Planned Enhancements (Phase 2 & 3):**
+  * **Phase 2B (v3.3.25):** Unified `Log Verbosity` dropdown. Removed `capability "Refresh"`. Moved child refresh loop to `refreshAllChildren()`.
 
-  * Phase 2 – Logging UX Overhaul: unified Log Verbosity dropdown.
+  * **Phase 2C (v3.3.26):** Added connection guard to `refreshAllChildren()` to prevent blocking during Hubitat reboots.
 
-  * Phase 3 – Health Check & Auto-Recovery: proactive connection monitoring with exponential backoff.
+***
+
+## 📝 Summary of Updates Applied to RETR-Hub-Logic.md (v3.3.25 → v3.3.26)
+
+**Version Control:**
+
+* Bumped **Driver Version** from `3.3.25` → **`3.3.26`**.
+
+**Section 1 – Project Context:**
+
+* **Section 1.6** (new) – **Phase 2C Refresh Guard (v3.3.26)**. Documents the fix for the `refreshAllChildren` blocking issue.
+
+**Section 5 – Internal Logic & State Variables:**
+
+* Updated the **`refreshAllChildren()`** description to mention the connection state guard.
+
+**Section 6 – Logic Guardrails & Fail-Safes:**
+
+* Added **Refresh Guard (v3.3.26)**.
+
+**Section 7 – Versioning & Lineage:**
+
+* Bumped Current Driver Version to 3.3.26.
+
+* Added **Phase 2C** to the Key Enhancements list.
 
 ***
 
