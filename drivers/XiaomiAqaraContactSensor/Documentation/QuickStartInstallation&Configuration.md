@@ -2,7 +2,7 @@
 ### _Quick Start, Installation & Configuration_
 
 ## 🔢 Version Control
-**Document Control:** 1.0.3  
+**Document Control:** 1.0.4  
 **Current Status:** Stable  
 - **Driver:** `XiaomiAqaraContactSensor-DGBQ.groovy` (v1.0.17)  
 **Maintenance Lead:** David Ball-Quenneville (DGBQ)  
@@ -111,6 +111,8 @@ Current States provide live telemetry used for Dashboards, Rule Machine, and Ale
 | **`healthStatus`** | Device reachability indicator (custom, no Ping button). | `online`, `offline`, `unknown` |
 | **`networkRejoinCount`** | Number of times device rejoined Zigbee mesh. | Integer |
 
+**Note:** Health status is logged at `Info` level only when the status changes (e.g., from `online` to `offline`). The hourly health check itself logs only at `Debug` level to avoid log clutter.
+
 ---
 
 ### **State Variables**
@@ -175,6 +177,7 @@ This driver was refined through a collaborative effort between a human **Project
 
 | Version | Date | Changes |
 | :--- | :--- | :--- |
+| **1.0.4** | 2026-11-10 | Restructured to new DGBQ SOP. |
 | **1.0.3** | 2026-05-03 | Updated for driver v1.0.17: added `batteryVoltage` attribute, removed `checkInterval`, added note about health status after configure. |
 | **1.0.2** | 2026-04-27 | Updated for driver v1.0.11: added Auto-Revert Debug preference, removed HealthCheck capability (no more stray "Ping" button). Preserved all existing content. |
 | **1.0.1** | 2026-04-25 | Updated for driver v1.0.10; clarified `lastTx` behaviour. |

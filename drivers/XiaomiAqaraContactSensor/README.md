@@ -2,7 +2,7 @@
 ### _A Clean, Reliable Driver for Zigbee Contact Sensors (MCCGQ11LM / AS006CNW01)_
 
 ## 🔢 Version Control
-**Document Control:** 1.0.3  
+**Document Control:** 1.1.0  
 **Current Status:** Stable  
 - **Driver:** `XiaomiAqaraContactSensor-DGBQ.groovy` (v1.0.17)  
 **Maintenance Lead:** David Ball-Quenneville (DGBQ)  
@@ -69,31 +69,22 @@ No parent/child relationship is required – this is a standalone device driver.
 
 <h2 id="documentation">📑 Documentation</h2>
 
-### **Quick Start**
-1. Copy the driver code into **Drivers Code** → **New Driver**.
-2. Save the driver.
-3. Put your Xiaomi contact sensor into pairing mode.
-4. In Hubitat, go to **Devices** → **Add Device** → **Zigbee** → your sensor should appear and will use this driver automatically.
-5. After pairing, click **Configure** in the device page to set up reporting intervals.
+### **Quick Start, Installation, Configuration**
+* **[Setup Guide](./QuickStartInstallation&Configuration.md):** Step-by-step setup instructions, including preference references and troubleshooting.
 
-### **Preferences**
-- **Log verbosity:** Select level (Debug logs everything; Info is recommended for daily use).
-- **Auto-Revert Debug:** When enabled (default), Debug logging automatically turns off after 30 minutes. Disable to keep debug on indefinitely for extended troubleshooting.
-- **Invert contact state:** Check if you want `open` reported as `closed` and vice versa.
+### **Operational Specifications & Technical Deep-Dives**
+For those interested in the "under-the-hood" logic of this fork, I have documented the overhaul process and the functional specifications of the drivers:
 
-### **Commands**
-- **Configure:** Sets up Zigbee bindings and reporting (battery every 5 hours, contact on change).
-- **Refresh:** Reads current contact and battery state (press the sensor’s button or open/close it first to wake it).
+* **[XIAO-Contact-Logic](./XIAO-Contact-Logic.md):** Master Functional Specifications for the dual-path Zigbee parsing, health check logic, and state variables.
 
-### **Attributes (States)**
-- `contact` – `open` or `closed`
-- `battery` – Percentage (0–100%)
-- `batteryVoltage` – Voltage in volts (e.g., 3.06V)
-- `lastBattery` – Timestamp of last battery report
-- `healthStatus` – `online`, `offline`, or `unknown`
-- `networkRejoinCount` – Number of times device rejoined mesh
+### **Reference Documents**
+* **[Preferences & Commands Reference](./PreferencesCommandsReference.md):** Quick reference for UI commands, preferences, and attributes.
+* **[Project Statement of Purpose](./ProjectStatementofPurpose.md):** Project vision and scope.
+* **[Requirements Document](./RequirementsDocument.md):** Project roadmap and feature tracking.
+* **[Legacy Source Archive](./LegacySource/README.md):** Historical reference for the original universal drivers.
 
-**Note:** Health status is logged at `Info` level only when the status changes (e.g., from `online` to `offline`). The hourly health check itself logs only at `Debug` level to avoid log clutter.
+### **Revision History**
+* **[Driver Changelog](./CHANGELOG.md):** Detailed version-by-version changes.
 
 ---
 
@@ -115,6 +106,7 @@ This driver was refined with the assistance of **Gemini AI** to audit, restructu
 
 | Version | Date | Changes |
 | :--- | :--- | :--- |
+| **1.1.0** | 2026-11-10 | Restructured to new DGBQ SOP. Added links for new Project Statement, Requirements, and Preferences/Commands Reference documents. |
 | **1.0.3** | 2026-05-03 | Updated for driver v1.0.17: added `batteryVoltage` attribute, removed `checkInterval`, corrected voltage conversion description, improved logging and health status after configure. |
 | **1.0.2** | 2026-04-27 | Updated for driver v1.0.11: added Auto-Revert Debug preference, removed HealthCheck capability (no more stray "Ping" button). Preserved all existing content. |
 | **1.0.0** | 2026-04-24 | Initial release – stripped universal driver, added health check, log levels, contact inversion, and network rejoin count. |
